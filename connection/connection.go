@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"basesdk/configs"
 	"context"
 	"fmt"
 	"log"
@@ -31,17 +32,17 @@ type storageManager struct {
 
 var _ StorageManager = (*storageManager)(nil)
 
-func NewConnection(config DBConfigParams) (StorageManager, error) {
+func NewConnection(config configs.DatabaseConfig) (StorageManager, error) {
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		config.DBHost,
-		config.DBUsername,
-		config.DBPassword,
-		config.DBName,
-		config.DBPort,
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+		config.GetHost(),
+		config.GetUsername(),
+		config.GetPassword(),
+		config.GetDBName(),
+		config.GetPort(),
 	)
 
-	db, err := openConnection(dsn, config.DBLogLevel)
+	db, err := openConnection(dsn, config.GetLogLevel())
 	if err != nil {
 		return nil, err
 	}

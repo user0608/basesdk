@@ -21,14 +21,28 @@ import (
 const baseDir = "migrations"
 
 type MigrationRunner struct {
-	manager connection.StorageManager
-	sources []fs.FS
+	storageManager connection.StorageManager
+	sources        []fs.FS
 }
 
-func NewMigrationRunner(manager connection.StorageManager, sources ...fs.FS) *MigrationRunner {
+func NewMigrationRunner(
+	storageManager connection.StorageManager,
+	sourceGroups []FileSystemSources,
+) *MigrationRunner {
+	var sources []fs.FS
+
+	for _, group := range sourceGroups {
+		for _, src := range group {
+			if src == nil {
+				continue
+			}
+			sources = append(sources, src)
+		}
+	}
+
 	return &MigrationRunner{
-		manager: manager,
-		sources: sources,
+		storageManager: storageManager,
+		sources:        sources,
 	}
 }
 
@@ -147,7 +161,7 @@ func (mr *MigrationRunner) setupGoose(ctx context.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx := mr.manager.Conn(ctx)
+	tx := mr.storageManager.Conn(ctx)
 	db, err := tx.DB()
 	if err != nil {
 		return nil, err

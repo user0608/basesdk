@@ -107,13 +107,19 @@ database:
   username: "postgres"
   password: "secret"
   log_level: "debug"
+jwt:
+  private_key_path: "./keys/private.pem"
+  public_key_path: "./keys/public.pem"
+  access_token_ttl: "10m"
+  refresh_token_ttl: "168h"
+  issuer: "test-app"
 `
 
 	if err := os.WriteFile(configPath, []byte(content), 0644); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
 
-	appCfg, dbCfg, err := DefaultConfigsProvider(ConfigPath(configPath))
+	appCfg, dbCfg, jwtCfg, err := DefaultConfigsProvider(ConfigPath(configPath))
 	if err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
@@ -145,10 +151,76 @@ database:
 	if dbCfg.GetLogLevel() != "debug" {
 		t.Fatalf("expected log level %q, got %q", "debug", dbCfg.GetLogLevel())
 	}
+
+	if jwtCfg.GetPrivateKeyPath() != "./keys/private.pem" {
+		t.Fatalf("expected private key path %q, got %q", "./keys/private.pem", jwtCfg.GetPrivateKeyPath())
+	}
+
+	if jwtCfg.GetPublicKeyPath() != "./keys/public.pem" {
+		t.Fatalf("expected public key path %q, got %q", "./keys/public.pem", jwtCfg.GetPublicKeyPath())
+	}
+
+	if jwtCfg.GetAccessTokenTTL() != "10m" {
+		t.Fatalf("expected access ttl %q, got %q", "10m", jwtCfg.GetAccessTokenTTL())
+	}
+
+	if jwtCfg.GetRefreshTokenTTL() != "168h" {
+		t.Fatalf("expected refresh ttl %q, got %q", "168h", jwtCfg.GetRefreshTokenTTL())
+	}
+
+	if jwtCfg.GetIssuer() != "test-app" {
+		t.Fatalf("expected issuer %q, got %q", "test-app", jwtCfg.GetIssuer())
+	}
+}
+
+func TestDefaultConfigsProviderUsesDefaults(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+
+	content := `
+database:
+  host: "localhost"
+  port: 5432
+  db_name: "my_app"
+  username: "postgres"
+  password: "secret"
+jwt:
+  private_key_path: "./keys/private.pem"
+  public_key_path: "./keys/public.pem"
+`
+
+	if err := os.WriteFile(configPath, []byte(content), 0644); err != nil {
+		t.Fatalf("write config file: %v", err)
+	}
+
+	appCfg, dbCfg, jwtCfg, err := DefaultConfigsProvider(ConfigPath(configPath))
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+
+	if appCfg.ListenAddress() != defaultAddress {
+		t.Fatalf("expected default address %q, got %q", defaultAddress, appCfg.ListenAddress())
+	}
+
+	if dbCfg.GetLogLevel() != defaultDatabaseLogLevel {
+		t.Fatalf("expected default database log level %q, got %q", defaultDatabaseLogLevel, dbCfg.GetLogLevel())
+	}
+
+	if jwtCfg.GetAccessTokenTTL() != defaultJWTAccessTTL {
+		t.Fatalf("expected default access ttl %q, got %q", defaultJWTAccessTTL, jwtCfg.GetAccessTokenTTL())
+	}
+
+	if jwtCfg.GetRefreshTokenTTL() != defaultJWTRefreshTTL {
+		t.Fatalf("expected default refresh ttl %q, got %q", defaultJWTRefreshTTL, jwtCfg.GetRefreshTokenTTL())
+	}
+
+	if jwtCfg.GetIssuer() != defaultJWTIssuer {
+		t.Fatalf("expected default issuer %q, got %q", defaultJWTIssuer, jwtCfg.GetIssuer())
+	}
 }
 
 func TestDefaultConfigsProviderReturnsErrorWhenPathIsEmpty(t *testing.T) {
-	appCfg, dbCfg, err := DefaultConfigsProvider(" ")
+	appCfg, dbCfg, jwtCfg, err := DefaultConfigsProvider(" ")
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -160,11 +232,15 @@ func TestDefaultConfigsProviderReturnsErrorWhenPathIsEmpty(t *testing.T) {
 
 	if dbCfg != nil {
 		t.Fatalf("expected nil database config, got %#v", dbCfg)
+	}
+
+	if jwtCfg != nil {
+		t.Fatalf("expected nil jwt config, got %#v", jwtCfg)
 	}
 }
 
 func TestDefaultConfigsProviderReturnsErrorWhenFileDoesNotExist(t *testing.T) {
-	appCfg, dbCfg, err := DefaultConfigsProvider("missing.yaml")
+	appCfg, dbCfg, jwtCfg, err := DefaultConfigsProvider("missing.yaml")
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -176,6 +252,10 @@ func TestDefaultConfigsProviderReturnsErrorWhenFileDoesNotExist(t *testing.T) {
 
 	if dbCfg != nil {
 		t.Fatalf("expected nil database config, got %#v", dbCfg)
+	}
+
+	if jwtCfg != nil {
+		t.Fatalf("expected nil jwt config, got %#v", jwtCfg)
 	}
 }
 
@@ -192,13 +272,19 @@ database:
   username: ""
   password: ""
   log_level: ""
+jwt:
+  private_key_path: ""
+  public_key_path: ""
+  access_token_ttl: ""
+  refresh_token_ttl: ""
+  issuer: ""
 `
 
 	if err := os.WriteFile(configPath, []byte(content), 0644); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
 
-	appCfg, dbCfg, err := DefaultConfigsProvider(ConfigPath(configPath))
+	appCfg, dbCfg, jwtCfg, err := DefaultConfigsProvider(ConfigPath(configPath))
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -210,6 +296,10 @@ database:
 
 	if dbCfg != nil {
 		t.Fatalf("expected nil database config, got %#v", dbCfg)
+	}
+
+	if jwtCfg != nil {
+		t.Fatalf("expected nil jwt config, got %#v", jwtCfg)
 	}
 }
 
@@ -223,6 +313,13 @@ func TestNewConfigTrimsValues(t *testing.T) {
 			Username: "  postgres  ",
 			Password: "  secret  ",
 			LogLevel: "  debug  ",
+		},
+		JWT: rawJWTConfig{
+			PrivateKeyPath:  "  ./keys/private.pem  ",
+			PublicKeyPath:   "  ./keys/public.pem  ",
+			AccessTokenTTL:  "  10m  ",
+			RefreshTokenTTL: "  168h  ",
+			Issuer:          "  test-app  ",
 		},
 	}
 
@@ -253,9 +350,39 @@ func TestNewConfigTrimsValues(t *testing.T) {
 	if db.GetLogLevel() != "debug" {
 		t.Fatalf("expected log level %q, got %q", "debug", db.GetLogLevel())
 	}
+
+	jwt := cfg.JWT()
+
+	if jwt.GetPrivateKeyPath() != "./keys/private.pem" {
+		t.Fatalf("expected private key path %q, got %q", "./keys/private.pem", jwt.GetPrivateKeyPath())
+	}
+
+	if jwt.GetPublicKeyPath() != "./keys/public.pem" {
+		t.Fatalf("expected public key path %q, got %q", "./keys/public.pem", jwt.GetPublicKeyPath())
+	}
+
+	if jwt.GetAccessTokenTTL() != "10m" {
+		t.Fatalf("expected access ttl %q, got %q", "10m", jwt.GetAccessTokenTTL())
+	}
+
+	if jwt.GetRefreshTokenTTL() != "168h" {
+		t.Fatalf("expected refresh ttl %q, got %q", "168h", jwt.GetRefreshTokenTTL())
+	}
+
+	if jwt.GetIssuer() != "test-app" {
+		t.Fatalf("expected issuer %q, got %q", "test-app", jwt.GetIssuer())
+	}
 }
 
 func TestConfigValidate(t *testing.T) {
+	validJWT := jwtConfig{
+		privateKeyPath:  "./keys/private.pem",
+		publicKeyPath:   "./keys/public.pem",
+		accessTokenTTL:  "10m",
+		refreshTokenTTL: "168h",
+		issuer:          "test-app",
+	}
+
 	tests := []struct {
 		name    string
 		cfg     *config
@@ -272,6 +399,7 @@ func TestConfigValidate(t *testing.T) {
 					username: "postgres",
 					logLevel: "debug",
 				},
+				jwt: validJWT,
 			},
 		},
 		{
@@ -284,6 +412,7 @@ func TestConfigValidate(t *testing.T) {
 					username: "postgres",
 					logLevel: "debug",
 				},
+				jwt: validJWT,
 			},
 			wantErr: true,
 		},
@@ -297,6 +426,7 @@ func TestConfigValidate(t *testing.T) {
 					username: "postgres",
 					logLevel: "debug",
 				},
+				jwt: validJWT,
 			},
 			wantErr: true,
 		},
@@ -311,6 +441,7 @@ func TestConfigValidate(t *testing.T) {
 					username: "postgres",
 					logLevel: "debug",
 				},
+				jwt: validJWT,
 			},
 			wantErr: true,
 		},
@@ -324,6 +455,7 @@ func TestConfigValidate(t *testing.T) {
 					username: "postgres",
 					logLevel: "debug",
 				},
+				jwt: validJWT,
 			},
 			wantErr: true,
 		},
@@ -337,6 +469,7 @@ func TestConfigValidate(t *testing.T) {
 					dbName:   "my_app",
 					logLevel: "debug",
 				},
+				jwt: validJWT,
 			},
 			wantErr: true,
 		},
@@ -349,6 +482,107 @@ func TestConfigValidate(t *testing.T) {
 					port:     5432,
 					dbName:   "my_app",
 					username: "postgres",
+				},
+				jwt: validJWT,
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing jwt private key path",
+			cfg: &config{
+				address: ":8080",
+				database: databaseConfig{
+					host:     "localhost",
+					port:     5432,
+					dbName:   "my_app",
+					username: "postgres",
+					logLevel: "debug",
+				},
+				jwt: jwtConfig{
+					publicKeyPath:   "./keys/public.pem",
+					accessTokenTTL:  "10m",
+					refreshTokenTTL: "168h",
+					issuer:          "test-app",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing jwt public key path",
+			cfg: &config{
+				address: ":8080",
+				database: databaseConfig{
+					host:     "localhost",
+					port:     5432,
+					dbName:   "my_app",
+					username: "postgres",
+					logLevel: "debug",
+				},
+				jwt: jwtConfig{
+					privateKeyPath:  "./keys/private.pem",
+					accessTokenTTL:  "10m",
+					refreshTokenTTL: "168h",
+					issuer:          "test-app",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing jwt access token ttl",
+			cfg: &config{
+				address: ":8080",
+				database: databaseConfig{
+					host:     "localhost",
+					port:     5432,
+					dbName:   "my_app",
+					username: "postgres",
+					logLevel: "debug",
+				},
+				jwt: jwtConfig{
+					privateKeyPath:  "./keys/private.pem",
+					publicKeyPath:   "./keys/public.pem",
+					refreshTokenTTL: "168h",
+					issuer:          "test-app",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing jwt refresh token ttl",
+			cfg: &config{
+				address: ":8080",
+				database: databaseConfig{
+					host:     "localhost",
+					port:     5432,
+					dbName:   "my_app",
+					username: "postgres",
+					logLevel: "debug",
+				},
+				jwt: jwtConfig{
+					privateKeyPath: "./keys/private.pem",
+					publicKeyPath:  "./keys/public.pem",
+					accessTokenTTL: "10m",
+					issuer:         "test-app",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing jwt issuer",
+			cfg: &config{
+				address: ":8080",
+				database: databaseConfig{
+					host:     "localhost",
+					port:     5432,
+					dbName:   "my_app",
+					username: "postgres",
+					logLevel: "debug",
+				},
+				jwt: jwtConfig{
+					privateKeyPath:  "./keys/private.pem",
+					publicKeyPath:   "./keys/public.pem",
+					accessTokenTTL:  "10m",
+					refreshTokenTTL: "168h",
 				},
 			},
 			wantErr: true,

@@ -22,7 +22,7 @@ func TestMigrationsFSCombinesFirstLevelSQLFromUnknownRootDirs(t *testing.T) {
 		"ventas/notes.txt":             {Data: []byte("ignored")},
 	}
 
-	runner := NewMigrationRunner(nil, src1, src2)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src1}, {src2}})
 
 	combined, err := runner.MigrationsFS()
 	if err != nil {
@@ -62,7 +62,7 @@ func TestMigrationsFSPreservesFileContent(t *testing.T) {
 		"seguridad/001_init.sql": {Data: []byte("create table users;")},
 	}
 
-	runner := NewMigrationRunner(nil, src)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src}})
 
 	combined, err := runner.MigrationsFS()
 	if err != nil {
@@ -85,7 +85,7 @@ func TestMigrationsFSIgnoresNestedSQL(t *testing.T) {
 		"seguridad/subdir/002_nested.sql": {Data: []byte("nested")},
 	}
 
-	runner := NewMigrationRunner(nil, src)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src}})
 
 	combined, err := runner.MigrationsFS()
 	if err != nil {
@@ -105,7 +105,7 @@ func TestMigrationsFSIgnoresNonSQLFiles(t *testing.T) {
 		"seguridad/config.json":  {Data: []byte("{}")},
 	}
 
-	runner := NewMigrationRunner(nil, src)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src}})
 
 	combined, err := runner.MigrationsFS()
 	if err != nil {
@@ -135,7 +135,7 @@ func TestMigrationsFSReturnsErrorOnDuplicateFile(t *testing.T) {
 		"ventas/001_init.sql": {Data: []byte("two")},
 	}
 
-	runner := NewMigrationRunner(nil, src1, src2)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src1}, {src2}})
 
 	_, err := runner.MigrationsFS()
 	if err == nil {
@@ -175,7 +175,7 @@ DROP TABLE orders;
 		},
 	}
 
-	runner := NewMigrationRunner(nil, src)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src}})
 
 	got, err := runner.SQLScript()
 	if err != nil {
@@ -213,7 +213,7 @@ DROP TABLE users;
 		},
 	}
 
-	runner := NewMigrationRunner(nil, src)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src}})
 
 	got, err := runner.SQLScript()
 	if err != nil {
@@ -252,7 +252,7 @@ SELECT 0;
 		},
 	}
 
-	runner := NewMigrationRunner(nil, src1, src2)
+	runner := NewMigrationRunner(nil, []FileSystemSources{{src1}, {src2}})
 
 	_, err := runner.SQLScript()
 	if err == nil {

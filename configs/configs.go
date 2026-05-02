@@ -11,11 +11,20 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultAddress          = ":8080"
+	defaultDatabaseLogLevel = "info"
+	defaultJWTAccessTTL     = "15m"
+	defaultJWTRefreshTTL    = "720h"
+	defaultJWTIssuer        = "app"
+)
+
 type ConfigPath string
 
 type ApplicationConfigs interface {
 	ListenAddress() string
 	Database() DatabaseConfig
+	JWT() JWTConfig
 }
 
 type DatabaseConfig interface {
@@ -27,12 +36,21 @@ type DatabaseConfig interface {
 	GetLogLevel() string
 }
 
+type JWTConfig interface {
+	GetPrivateKeyPath() string
+	GetPublicKeyPath() string
+	GetAccessTokenTTL() string
+	GetRefreshTokenTTL() string
+	GetIssuer() string
+}
+
 type ConfigPathProvider func() (ConfigPath, error)
-type ApplicationConfigsProvider func(configPath ConfigPath) (ApplicationConfigs, DatabaseConfig, error)
+type ApplicationConfigsProvider func(configPath ConfigPath) (ApplicationConfigs, DatabaseConfig, JWTConfig, error)
 
 type rawConfig struct {
 	Address  string            `mapstructure:"address"`
 	Database rawDatabaseConfig `mapstructure:"database"`
+	JWT      rawJWTConfig      `mapstructure:"jwt"`
 }
 
 type rawDatabaseConfig struct {
@@ -44,9 +62,18 @@ type rawDatabaseConfig struct {
 	LogLevel string `mapstructure:"log_level"`
 }
 
+type rawJWTConfig struct {
+	PrivateKeyPath  string `mapstructure:"private_key_path"`
+	PublicKeyPath   string `mapstructure:"public_key_path"`
+	AccessTokenTTL  string `mapstructure:"access_token_ttl"`
+	RefreshTokenTTL string `mapstructure:"refresh_token_ttl"`
+	Issuer          string `mapstructure:"issuer"`
+}
+
 type config struct {
 	address  string
 	database databaseConfig
+	jwt      jwtConfig
 }
 
 type databaseConfig struct {
@@ -58,8 +85,17 @@ type databaseConfig struct {
 	logLevel string
 }
 
+type jwtConfig struct {
+	privateKeyPath  string
+	publicKeyPath   string
+	accessTokenTTL  string
+	refreshTokenTTL string
+	issuer          string
+}
+
 var _ ApplicationConfigs = (*config)(nil)
 var _ DatabaseConfig = (*databaseConfig)(nil)
+var _ JWTConfig = (*jwtConfig)(nil)
 
 func (c *config) ListenAddress() string {
 	return c.address
@@ -67,6 +103,10 @@ func (c *config) ListenAddress() string {
 
 func (c *config) Database() DatabaseConfig {
 	return &c.database
+}
+
+func (c *config) JWT() JWTConfig {
+	return &c.jwt
 }
 
 func (d *databaseConfig) GetHost() string {
@@ -91,6 +131,26 @@ func (d *databaseConfig) GetDBName() string {
 
 func (d *databaseConfig) GetLogLevel() string {
 	return d.logLevel
+}
+
+func (j *jwtConfig) GetPrivateKeyPath() string {
+	return j.privateKeyPath
+}
+
+func (j *jwtConfig) GetPublicKeyPath() string {
+	return j.publicKeyPath
+}
+
+func (j *jwtConfig) GetAccessTokenTTL() string {
+	return j.accessTokenTTL
+}
+
+func (j *jwtConfig) GetRefreshTokenTTL() string {
+	return j.refreshTokenTTL
+}
+
+func (j *jwtConfig) GetIssuer() string {
+	return j.issuer
 }
 
 func (c *config) validate() error {
@@ -118,16 +178,36 @@ func (c *config) validate() error {
 		return errors.New("database log_level is required")
 	}
 
+	if c.jwt.privateKeyPath == "" {
+		return errors.New("jwt private_key_path is required")
+	}
+
+	if c.jwt.publicKeyPath == "" {
+		return errors.New("jwt public_key_path is required")
+	}
+
+	if c.jwt.accessTokenTTL == "" {
+		return errors.New("jwt access_token_ttl is required")
+	}
+
+	if c.jwt.refreshTokenTTL == "" {
+		return errors.New("jwt refresh_token_ttl is required")
+	}
+
+	if c.jwt.issuer == "" {
+		return errors.New("jwt issuer is required")
+	}
+
 	return nil
 }
 
 var _ ApplicationConfigsProvider = DefaultConfigsProvider
 
-func DefaultConfigsProvider(configPath ConfigPath) (ApplicationConfigs, DatabaseConfig, error) {
+func DefaultConfigsProvider(configPath ConfigPath) (ApplicationConfigs, DatabaseConfig, JWTConfig, error) {
 	filePath := strings.TrimSpace(string(configPath))
 	if filePath == "" {
 		slog.Error("config path is empty")
-		return nil, nil, errors.New("config path is empty")
+		return nil, nil, nil, errors.New("config path is empty")
 	}
 
 	var raw rawConfig
@@ -138,36 +218,52 @@ func DefaultConfigsProvider(configPath ConfigPath) (ApplicationConfigs, Database
 
 	if err := v.ReadInConfig(); err != nil {
 		slog.Error("read config", "file", filepath.Base(filePath), "error", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if err := v.Unmarshal(&raw); err != nil {
 		slog.Error("unmarshal config", "file", filepath.Base(filePath), "error", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	cfg := newConfig(raw)
 
 	if err := cfg.validate(); err != nil {
 		slog.Error("validate config", "file", filepath.Base(filePath), "error", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return cfg, cfg.Database(), nil
+	return cfg, cfg.Database(), cfg.JWT(), nil
 }
 
 func newConfig(raw rawConfig) *config {
 	return &config{
-		address: strings.TrimSpace(raw.Address),
+		address: valueOrDefault(raw.Address, defaultAddress),
 		database: databaseConfig{
 			host:     strings.TrimSpace(raw.Database.Host),
 			port:     raw.Database.Port,
 			dbName:   strings.TrimSpace(raw.Database.DBName),
 			username: strings.TrimSpace(raw.Database.Username),
 			password: raw.Database.Password,
-			logLevel: strings.TrimSpace(raw.Database.LogLevel),
+			logLevel: valueOrDefault(raw.Database.LogLevel, defaultDatabaseLogLevel),
+		},
+		jwt: jwtConfig{
+			privateKeyPath:  strings.TrimSpace(raw.JWT.PrivateKeyPath),
+			publicKeyPath:   strings.TrimSpace(raw.JWT.PublicKeyPath),
+			accessTokenTTL:  valueOrDefault(raw.JWT.AccessTokenTTL, defaultJWTAccessTTL),
+			refreshTokenTTL: valueOrDefault(raw.JWT.RefreshTokenTTL, defaultJWTRefreshTTL),
+			issuer:          valueOrDefault(raw.JWT.Issuer, defaultJWTIssuer),
 		},
 	}
+}
+
+func valueOrDefault(value string, fallback string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return fallback
+	}
+
+	return value
 }
 
 var _ ConfigPathProvider = DefaultConfigPathProvider

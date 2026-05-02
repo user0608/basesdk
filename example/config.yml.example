@@ -1,0 +1,16 @@
+address: "0.0.0.0:7622"
+
+database:
+  host: "localhost"
+  port: 5432
+  db_name: "base_sdk_db"
+  username: "user002"
+  password: "<password>"
+  log_level: "info"
+
+jwt:
+  private_key_path: "./keys/private.pem"
+  public_key_path: "./keys/public.pem"
+  access_token_ttl: "15m"
+  refresh_token_ttl: "720h"
+  issuer: "base-sdk"

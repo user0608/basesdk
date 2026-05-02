@@ -1,0 +1,50 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
+/build/
+/dist/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Coverage
+coverage.out
+coverage.html
+*.coverprofile
+
+# Dependencies/vendor
+/vendor/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# IDEs/editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Air
+tmp/
+
+# Keys/secrets
+*.pem
+*.key
+*.crt
+/keys/
+
+# Configs
+config.yml
