@@ -14,8 +14,7 @@ import (
 const (
 	defaultAddress          = ":8080"
 	defaultDatabaseLogLevel = "info"
-	defaultJWTAccessTTL     = "15m"
-	defaultJWTRefreshTTL    = "720h"
+	defaultJWTTokenTTL      = "720h"
 	defaultJWTIssuer        = "app"
 )
 
@@ -39,9 +38,6 @@ type DatabaseConfig interface {
 type JWTConfig interface {
 	GetPrivateKeyPath() string
 	GetPublicKeyPath() string
-	GetAccessTokenTTL() string
-	GetRefreshTokenTTL() string
-	GetIssuer() string
 }
 
 type ConfigPathProvider func() (ConfigPath, error)
@@ -63,11 +59,8 @@ type rawDatabaseConfig struct {
 }
 
 type rawJWTConfig struct {
-	PrivateKeyPath  string `mapstructure:"private_key_path"`
-	PublicKeyPath   string `mapstructure:"public_key_path"`
-	AccessTokenTTL  string `mapstructure:"access_token_ttl"`
-	RefreshTokenTTL string `mapstructure:"refresh_token_ttl"`
-	Issuer          string `mapstructure:"issuer"`
+	PrivateKeyPath string `mapstructure:"private_key_path"`
+	PublicKeyPath  string `mapstructure:"public_key_path"`
 }
 
 type config struct {
@@ -86,11 +79,8 @@ type databaseConfig struct {
 }
 
 type jwtConfig struct {
-	privateKeyPath  string
-	publicKeyPath   string
-	accessTokenTTL  string
-	refreshTokenTTL string
-	issuer          string
+	privateKeyPath string
+	publicKeyPath  string
 }
 
 var _ ApplicationConfigs = (*config)(nil)
@@ -141,18 +131,6 @@ func (j *jwtConfig) GetPublicKeyPath() string {
 	return j.publicKeyPath
 }
 
-func (j *jwtConfig) GetAccessTokenTTL() string {
-	return j.accessTokenTTL
-}
-
-func (j *jwtConfig) GetRefreshTokenTTL() string {
-	return j.refreshTokenTTL
-}
-
-func (j *jwtConfig) GetIssuer() string {
-	return j.issuer
-}
-
 func (c *config) validate() error {
 	if c.address == "" {
 		return errors.New("address is required")
@@ -184,18 +162,6 @@ func (c *config) validate() error {
 
 	if c.jwt.publicKeyPath == "" {
 		return errors.New("jwt public_key_path is required")
-	}
-
-	if c.jwt.accessTokenTTL == "" {
-		return errors.New("jwt access_token_ttl is required")
-	}
-
-	if c.jwt.refreshTokenTTL == "" {
-		return errors.New("jwt refresh_token_ttl is required")
-	}
-
-	if c.jwt.issuer == "" {
-		return errors.New("jwt issuer is required")
 	}
 
 	return nil
@@ -248,11 +214,8 @@ func newConfig(raw rawConfig) *config {
 			logLevel: valueOrDefault(raw.Database.LogLevel, defaultDatabaseLogLevel),
 		},
 		jwt: jwtConfig{
-			privateKeyPath:  strings.TrimSpace(raw.JWT.PrivateKeyPath),
-			publicKeyPath:   strings.TrimSpace(raw.JWT.PublicKeyPath),
-			accessTokenTTL:  valueOrDefault(raw.JWT.AccessTokenTTL, defaultJWTAccessTTL),
-			refreshTokenTTL: valueOrDefault(raw.JWT.RefreshTokenTTL, defaultJWTRefreshTTL),
-			issuer:          valueOrDefault(raw.JWT.Issuer, defaultJWTIssuer),
+			privateKeyPath: strings.TrimSpace(raw.JWT.PrivateKeyPath),
+			publicKeyPath:  strings.TrimSpace(raw.JWT.PublicKeyPath),
 		},
 	}
 }

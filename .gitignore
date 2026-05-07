@@ -6,6 +6,7 @@
 *.dylib
 *.test
 *.out
+*_debug_*
 /bin/
 /build/
 /dist/
