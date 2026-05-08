@@ -1,7 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
 
-
 create table app_user
 (
     codigo varchar(100) not null primary key,
@@ -72,6 +71,7 @@ create table permission
 
     name varchar(150) not null,
     description varchar(500),
+
     created_by varchar(100) not null,
     created_at timestamp without time zone not null,
     updated_by varchar(100),
@@ -113,7 +113,7 @@ create table user_role
     unique (tenant_codigo, user_codigo, role_codigo)
 );
 
-comment on table user_role is 'Assigns roles to users inside a tenant.';
+comment on table user_role is 'Assigns roles directly to users inside a tenant.';
 
 create table role_permission
 (
@@ -145,6 +145,93 @@ create table role_permission
 );
 
 comment on table role_permission is 'Assigns permissions to roles inside a tenant.';
+
+create table app_group
+(
+    codigo varchar(100) not null primary key,
+    tenant_codigo varchar(100) not null,
+
+    name varchar(100) not null,
+    description varchar(500),
+    disabled boolean not null default false,
+
+    created_by varchar(100) not null,
+    created_at timestamp without time zone not null,
+    updated_by varchar(100),
+    updated_at timestamp without time zone,
+
+    constraint fk_app_group_tenant
+    foreign key (tenant_codigo)
+    references tenant (codigo),
+
+    constraint uq_app_group_tenant_name
+    unique (tenant_codigo, name)
+);
+
+comment on table app_group is 'Tenant group used to organize users by team, area, department, branch, or business unit.';
+comment on column app_group.disabled is 'Disables the group without deleting its users or role assignments.';
+
+create table user_group
+(
+    codigo varchar(100) not null primary key,
+    tenant_codigo varchar(100) not null,
+
+    user_codigo varchar(100) not null,
+    group_codigo varchar(100) not null,
+
+    created_by varchar(100) not null,
+    created_at timestamp without time zone not null,
+    updated_by varchar(100),
+    updated_at timestamp without time zone,
+
+    constraint fk_user_group_tenant
+    foreign key (tenant_codigo)
+    references tenant (codigo),
+
+    constraint fk_user_group_user
+    foreign key (user_codigo)
+    references app_user (codigo),
+
+    constraint fk_user_group_group
+    foreign key (group_codigo)
+    references app_group (codigo),
+
+    constraint uq_user_group
+    unique (tenant_codigo, user_codigo, group_codigo)
+);
+
+comment on table user_group is 'Assigns users to tenant groups.';
+
+create table group_role
+(
+    codigo varchar(100) not null primary key,
+    tenant_codigo varchar(100) not null,
+
+    group_codigo varchar(100) not null,
+    role_codigo varchar(100) not null,
+
+    created_by varchar(100) not null,
+    created_at timestamp without time zone not null,
+    updated_by varchar(100),
+    updated_at timestamp without time zone,
+
+    constraint fk_group_role_tenant
+    foreign key (tenant_codigo)
+    references tenant (codigo),
+
+    constraint fk_group_role_group
+    foreign key (group_codigo)
+    references app_group (codigo),
+
+    constraint fk_group_role_role
+    foreign key (role_codigo)
+    references role (codigo),
+
+    constraint uq_group_role
+    unique (tenant_codigo, group_codigo, role_codigo)
+);
+
+comment on table group_role is 'Assigns roles to groups so users can inherit permissions through group membership.';
 
 insert into app_user
 (
@@ -227,22 +314,24 @@ insert into role_permission
     created_at
 )
 select
-    'rp_' || role_super_admin.codigo || '_' || permission.codigo,
+    'rp_' || role_super_admin.codigo || '_' || permission.codigo as codigo,
     role_super_admin.tenant_codigo,
-    role_super_admin.codigo,
-    permission.codigo,
-    'kevin',
-    now()
+    role_super_admin.codigo as role_codigo,
+    permission.codigo as permission_codigo,
+    'kevin' as created_by,
+    now() as created_at
 from role role_super_admin
 cross join permission
 where role_super_admin.codigo = 'role_super_admin';
-
 
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
 
+drop table if exists group_role;
+drop table if exists user_group;
+drop table if exists app_group;
 drop table if exists role_permission;
 drop table if exists user_role;
 drop table if exists permission;
