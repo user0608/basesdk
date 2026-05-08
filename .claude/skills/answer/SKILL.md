@@ -1,66 +1,106 @@
 # Skill: `answer`
 
-Paquete para estandarizar respuestas HTTP JSON en handlers.
+Package for standardizing HTTP JSON responses in Echo handlers.
 
-## Qué resuelve
+## What it solves
 
-- Respuestas de éxito consistentes (`data` o `message`).
-- Respuestas de error consistentes (`message`) a partir de errores de dominio.
-- Mapeo de errores a códigos HTTP.
-- Log de errores internos inesperados.
+- Consistent success responses using `data` or `message`.
+- Consistent error responses using `message`.
+- Mapping domain errors to HTTP status codes.
+- Logging unexpected internal errors.
 
-## Contrato
+## Usage
 
-El paquete opera sobre un `Target` (adaptable a tu framework HTTP):
+`answer` works with any handler that receives `echo.Context`.
 
 ```go
-type Target interface {
-  JSON(code int, i any) error
-  NoContent(code int) error
+func ListProducts(usecase *usecases.ProductUsecase) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		products, err := usecase.List()
+		if err != nil {
+			return answer.Err(c, err)
+		}
+
+		return answer.Ok(c, products)
+	}
 }
 ```
 
-Para integrarlo, normalmente envuelves el contexto de tu framework para que implemente `JSON`/`NoContent`.
+## Main API
 
-## API principal
+- `Ok(c, payload)` → `200` with `{ data: payload }`.
+- `Created(c)` → `201` with `{ message: "Resource created successfully" }`.
+- `Message(c, msg)` → `200` with `{ message: msg }`.
+- `Success(c)` → `200` with `{ message: "Operation completed successfully" }`.
+- `NoContent(c)` → `204` with no body.
+- `Err(c, err)` → responds with an error using the standard format.
 
-- `Ok(c, payload)` → `200` con `{ data: payload }`.
-- `Created(c, payload)` → `201` con `{ data: payload }`.
-- `Accepted(c, payload)` → `202` con `{ data: payload }`.
-- `Message(c, msg)` → `200` con `{ message: msg }`.
-- `CreatedMessage(c, msg)` → `201` con `{ message: msg }`.
-- `AcceptedMessage(c, msg)` → `202` con `{ message: msg }`.
-- `Success(c)` → `200` con mensaje estándar.
-- `CreatedSuccess(c)` → `201` con mensaje estándar.
-- `AcceptedSuccess(c)` → `202` con mensaje estándar.
-- `NoContent(c)` → `204` sin cuerpo.
+## Examples
 
-Errores:
-
-- `Err(c, err)` → responde según `UnwrapErr(err)`.
-- `Auto(c, err)` → si `err != nil` usa `Err`, si no usa `Success`.
-
-## Mapeo de errores (`UnwrapErr`)
-
-`UnwrapErr(err)` retorna `(code, message)` con estas reglas:
-
-- Si `err` es `*errs.Err`: usa `err.Code()` y `err.Message()`. Si además tiene `Wrapped()`, ese error interno se loguea con `slog.Error`.
-- Si `err.Error()` empieza con `":"` (prefijo): se trata como error de cliente: `400` y el mensaje público es el contenido después de `":"`.
-- Cualquier otro error no esperado: devuelve `500` con mensaje genérico y loguea el error con `slog.Error`.
-
-## Ejemplo
+Response with data:
 
 ```go
-func (h *Handler) CreateUser(c answer.Target, req CreateUserReq) error {
-  user, err := h.svc.CreateUser(req)
-  if err != nil {
-    return answer.Err(c, err)
-  }
-  return answer.Created(c, user)
+return answer.Ok(c, products)
+```
+
+Creation response:
+
+```go
+return answer.Created(c)
+```
+
+Custom message response:
+
+```go
+return answer.Message(c, "Product updated successfully")
+```
+
+Simple success response:
+
+```go
+return answer.Success(c)
+```
+
+Response with no body:
+
+```go
+return answer.NoContent(c)
+```
+
+Error response:
+
+```go
+if err != nil {
+	return answer.Err(c, err)
 }
 ```
 
-## Notas
+## Errors
 
-- Evita devolver errores arbitrarios con mensajes sensibles. Si necesitas un mensaje público con código HTTP, usa `errs`.
-- El prefijo `":"` es un escape rápido para 400, pero para APIs grandes suele ser preferible `errs.BadRequest...` por consistencia.
+Use `answer.Err(c, err)` when a use case returns an error.
+
+```go
+product, err := usecase.Find(id)
+if err != nil {
+	return answer.Err(c, err)
+}
+
+return answer.Ok(c, product)
+```
+
+Rules applied by `Err`:
+
+- If the error is a domain error, it responds with its HTTP status code and public message.
+- If the error starts with `":"`, it responds with `400`.
+- If the error is unexpected, it responds with `500` using a generic message and logs the error internally.
+
+## Recommendations
+
+- Use `Ok` when returning data.
+- Use `Created` when confirming creation without returning a payload.
+- Use `Message` when you need a custom message.
+- Use `Success` when you only need to confirm an operation.
+- Use `NoContent` when the endpoint should not return a response body.
+- Use `Err` to respond to errors.
+- Use the `errs` skill to create public errors with HTTP status codes.
+- Avoid exposing sensitive information through arbitrary error messages.

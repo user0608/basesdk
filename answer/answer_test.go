@@ -1,63 +1,67 @@
 package answer
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
+	"net/http/httptest"
 	"testing"
 
 	"basesdk/errs"
+
+	"github.com/labstack/echo/v4"
 )
 
-type fakeTarget struct {
-	code            int
-	body            any
-	jsonCalled      bool
-	noContentCode   int
-	noContentCalled bool
+func newTestContext() (echo.Context, *httptest.ResponseRecorder) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+
+	return e.NewContext(req, rec), rec
 }
 
-func (f *fakeTarget) JSON(code int, i any) error {
-	f.code = code
-	f.body = i
-	f.jsonCalled = true
-	return nil
-}
-
-func (f *fakeTarget) NoContent(code int) error {
-	f.noContentCode = code
-	f.noContentCalled = true
-	return nil
-}
-
-func assertResponse(t *testing.T, c *fakeTarget, code int, message string, data any) {
+func assertResponse(t *testing.T, rec *httptest.ResponseRecorder, code int, message string, data any) {
 	t.Helper()
 
-	if !c.jsonCalled {
-		t.Fatal("expected JSON to be called")
+	if rec.Code != code {
+		t.Fatalf("expected status code %d, got %d", code, rec.Code)
 	}
 
-	if c.code != code {
-		t.Fatalf("expected status code %d, got %d", code, c.code)
-	}
-
-	response, ok := c.body.(*Response)
-	if !ok {
-		t.Fatalf("expected body type *Response, got %T", c.body)
+	var response Response
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("expected valid JSON response, got error %v and body %q", err, rec.Body.String())
 	}
 
 	if response.Message != message {
 		t.Fatalf("expected message %q, got %q", message, response.Message)
 	}
 
-	if !reflect.DeepEqual(response.Data, data) {
-		t.Fatalf("expected data %#v, got %#v", data, response.Data)
+	if data == nil {
+		if response.Data != nil {
+			t.Fatalf("expected nil data, got %#v", response.Data)
+		}
+
+		return
+	}
+
+	expectedData, err := json.Marshal(data)
+	if err != nil {
+		t.Fatalf("failed to marshal expected data: %v", err)
+	}
+
+	actualData, err := json.Marshal(response.Data)
+	if err != nil {
+		t.Fatalf("failed to marshal actual data: %v", err)
+	}
+
+	if string(actualData) != string(expectedData) {
+		t.Fatalf("expected data %s, got %s", expectedData, actualData)
 	}
 }
 
 func TestOk(t *testing.T) {
-	c := &fakeTarget{}
+	c, rec := newTestContext()
 	payload := map[string]string{"id": "123"}
 
 	err := Ok(c, payload)
@@ -66,37 +70,23 @@ func TestOk(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	assertResponse(t, c, http.StatusOK, "", payload)
+	assertResponse(t, rec, http.StatusOK, "", payload)
 }
 
 func TestCreated(t *testing.T) {
-	c := &fakeTarget{}
-	payload := map[string]string{"id": "123"}
+	c, rec := newTestContext()
 
-	err := Created(c, payload)
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusCreated, "", payload)
-}
-
-func TestAccepted(t *testing.T) {
-	c := &fakeTarget{}
-	payload := map[string]string{"status": "queued"}
-
-	err := Accepted(c, payload)
+	err := Created(c)
 
 	if err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	assertResponse(t, c, http.StatusAccepted, "", payload)
+	assertResponse(t, rec, http.StatusCreated, "Recurso creado exitosamente", nil)
 }
 
 func TestMessage(t *testing.T) {
-	c := &fakeTarget{}
+	c, rec := newTestContext()
 
 	err := Message(c, "custom message")
 
@@ -104,35 +94,11 @@ func TestMessage(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	assertResponse(t, c, http.StatusOK, "custom message", nil)
-}
-
-func TestCreatedMessage(t *testing.T) {
-	c := &fakeTarget{}
-
-	err := CreatedMessage(c, "created successfully")
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusCreated, "created successfully", nil)
-}
-
-func TestAcceptedMessage(t *testing.T) {
-	c := &fakeTarget{}
-
-	err := AcceptedMessage(c, "accepted successfully")
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusAccepted, "accepted successfully", nil)
+	assertResponse(t, rec, http.StatusOK, "custom message", nil)
 }
 
 func TestSuccess(t *testing.T) {
-	c := &fakeTarget{}
+	c, rec := newTestContext()
 
 	err := Success(c)
 
@@ -140,35 +106,11 @@ func TestSuccess(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	assertResponse(t, c, http.StatusOK, "Operación completada exitosamente", nil)
-}
-
-func TestCreatedSuccess(t *testing.T) {
-	c := &fakeTarget{}
-
-	err := CreatedSuccess(c)
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusCreated, "Recurso creado exitosamente", nil)
-}
-
-func TestAcceptedSuccess(t *testing.T) {
-	c := &fakeTarget{}
-
-	err := AcceptedSuccess(c)
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusAccepted, "Operación aceptada exitosamente", nil)
+	assertResponse(t, rec, http.StatusOK, "Operación completada exitosamente", nil)
 }
 
 func TestNoContent(t *testing.T) {
-	c := &fakeTarget{}
+	c, rec := newTestContext()
 
 	err := NoContent(c)
 
@@ -176,75 +118,17 @@ func TestNoContent(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	if !c.noContentCalled {
-		t.Fatal("expected NoContent to be called")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected status code %d, got %d", http.StatusNoContent, rec.Code)
 	}
 
-	if c.noContentCode != http.StatusNoContent {
-		t.Fatalf("expected status code %d, got %d", http.StatusNoContent, c.noContentCode)
-	}
-
-	if c.jsonCalled {
-		t.Fatal("expected JSON not to be called")
-	}
-}
-
-func TestUnwrapErrWithDomainError(t *testing.T) {
-	err := errs.BadRequestError(nil, "Bad request: %s", "missing field")
-
-	code, message := UnwrapErr(err)
-
-	if code != http.StatusBadRequest {
-		t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, code)
-	}
-
-	if message != "Bad request: missing field" {
-		t.Fatalf("expected message %q, got %q", "Bad request: missing field", message)
-	}
-}
-
-func TestUnwrapErrWithWrappedDomainError(t *testing.T) {
-	baseErr := fmt.Errorf("database failed")
-	err := errs.WrapError(baseErr, "Unexpected failure", http.StatusInternalServerError)
-
-	code, message := UnwrapErr(err)
-
-	if code != http.StatusInternalServerError {
-		t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, code)
-	}
-
-	if message != "Unexpected failure" {
-		t.Fatalf("expected message %q, got %q", "Unexpected failure", message)
-	}
-}
-
-func TestUnwrapErrWithPrefixedBadRequest(t *testing.T) {
-	code, message := UnwrapErr(errors.New(":invalid request"))
-
-	if code != http.StatusBadRequest {
-		t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, code)
-	}
-
-	if message != "invalid request" {
-		t.Fatalf("expected message %q, got %q", "invalid request", message)
-	}
-}
-
-func TestUnwrapErrWithInternalError(t *testing.T) {
-	code, message := UnwrapErr(errors.New("database failed"))
-
-	if code != http.StatusInternalServerError {
-		t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, code)
-	}
-
-	expected := "Ocurrió un problema. Se produjo un error inesperado."
-	if message != expected {
-		t.Fatalf("expected message %q, got %q", expected, message)
+	if rec.Body.Len() != 0 {
+		t.Fatalf("expected empty body, got %q", rec.Body.String())
 	}
 }
 
 func TestErrWithDomainError(t *testing.T) {
-	c := &fakeTarget{}
+	c, rec := newTestContext()
 	err := errs.BadRequestError(nil, "Invalid value: %s", "email")
 
 	got := Err(c, err)
@@ -253,11 +137,25 @@ func TestErrWithDomainError(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", got)
 	}
 
-	assertResponse(t, c, http.StatusBadRequest, "Invalid value: email", nil)
+	assertResponse(t, rec, http.StatusBadRequest, "Invalid value: email", nil)
+}
+
+func TestErrWithWrappedDomainError(t *testing.T) {
+	c, rec := newTestContext()
+	baseErr := fmt.Errorf("database failed")
+	err := errs.WrapError(baseErr, "Unexpected failure", http.StatusInternalServerError)
+
+	got := Err(c, err)
+
+	if got != nil {
+		t.Fatalf("expected nil error, got %v", got)
+	}
+
+	assertResponse(t, rec, http.StatusInternalServerError, "Unexpected failure", nil)
 }
 
 func TestErrWithPrefixedBadRequest(t *testing.T) {
-	c := &fakeTarget{}
+	c, rec := newTestContext()
 
 	err := Err(c, errors.New(":invalid request"))
 
@@ -265,42 +163,17 @@ func TestErrWithPrefixedBadRequest(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	assertResponse(t, c, http.StatusBadRequest, "invalid request", nil)
+	assertResponse(t, rec, http.StatusBadRequest, "invalid request", nil)
 }
 
-func TestAutoWithNilError(t *testing.T) {
-	c := &fakeTarget{}
+func TestErrWithInternalError(t *testing.T) {
+	c, rec := newTestContext()
 
-	err := Auto(c, nil)
+	err := Err(c, errors.New("database failed"))
 
 	if err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	assertResponse(t, c, http.StatusOK, "Operación completada exitosamente", nil)
-}
-
-func TestAutoWithDomainError(t *testing.T) {
-	c := &fakeTarget{}
-	domainErr := errs.BadRequestError(nil, "Invalid payload")
-
-	err := Auto(c, domainErr)
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusBadRequest, "Invalid payload", nil)
-}
-
-func TestAutoWithPrefixedBadRequest(t *testing.T) {
-	c := &fakeTarget{}
-
-	err := Auto(c, errors.New(":invalid request"))
-
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-
-	assertResponse(t, c, http.StatusBadRequest, "invalid request", nil)
+	assertResponse(t, rec, http.StatusInternalServerError, "Ocurrió un problema. Se produjo un error inesperado.", nil)
 }

@@ -1,35 +1,35 @@
 # Skill: `kcheck`
 
-Validador ligero para structs en Go basado en tags.
+Lightweight tag-based validator for Go structs.
 
-## Qué resuelve
+## What it solves
 
-- Validación declarativa de DTOs con tags (por defecto `chk`).
-- Validación de structs anidados.
-- Opciones para validar solo algunos campos (select) o excluir campos (skip).
-- Errores agregados por campo con formato estable.
+- Declarative DTO validation using struct tags, defaulting to `chk`.
+- Nested struct validation.
+- Options to validate only selected fields or skip specific fields.
+- Aggregated field errors with a stable format.
 
-## Uso rápido
+## Quick usage
 
 ```go
 type CreateUser struct {
-  Name  string `chk:"required min=2 max=50"`
-  Email string `chk:"required email"`
-  Age   int    `chk:"gte=18 lte=120"`
+	Name  string `chk:"required min=2 max=50"`
+	Email string `chk:"required email"`
+	Age   int    `chk:"gte=18 lte=120"`
 }
 
 if err := kcheck.Valid(CreateUser{...}); err != nil {
-  // err.Error(): "Name: ...; Email: ..."
+	// err.Error(): "Name: ...; Email: ..."
 }
 ```
 
 ## API
 
-- `kcheck.Valid(input, skips...)` valida el struct usando el validador por defecto, omitiendo campos.
-- `kcheck.ValidSelect(input, selected...)` valida solo los campos indicados.
-- `kcheck.Struct(input)` valida todo (equivalente al validador por defecto).
+- `kcheck.Valid(input, skips...)` validates the struct using the default validator, skipping the given fields.
+- `kcheck.ValidSelect(input, selected...)` validates only the given fields.
+- `kcheck.Struct(input)` validates the whole struct, equivalent to the default validator.
 
-También puedes crear un validador aislado:
+You can also create an isolated validator:
 
 ```go
 v := kcheck.New()
@@ -37,46 +37,51 @@ v.Register("startsx", func(f kcheck.Field) error { ... })
 err := v.Struct(dto)
 ```
 
-## Tags y reglas
+## Tags and rules
 
-El tag (por defecto `chk`) admite varias reglas separadas por espacios:
+The tag, defaulting to `chk`, accepts multiple rules separated by spaces:
 
-- Sin parámetro: `required`, `email`, `uuid`, `url`, `ip`, `lower`, `upper`, etc.
-- Con parámetro: `min=2`, `max=50`, `len=6`, `oneof=a,b,c`, `prefix=USR-`, `gte=18`.
+- Without parameter: `required`, `email`, `uuid`, `url`, `ip`, `lower`, `upper`, etc.
+- With parameter: `min=2`, `max=50`, `len=6`, `oneof=a,b,c`, `prefix=USR-`, `gte=18`.
 
-Si una regla no está registrada, el error será: `"validador [X] no registrado"`.
+If a rule is not registered, the error will be: `"validator [X] not registered"`.
 
-## Structs anidados
+## Nested structs
 
-- Se hace "dive" a campos `struct` (incluyendo punteros a struct no nulos).
-- Excepción: `time.Time` no se considera struct anidado para recorrer.
+- It dives into `struct` fields, including non-nil pointers to structs.
+- Exception: `time.Time` is not treated as a nested struct to traverse.
 
 ## Skip vs Select
 
-- Skip: `kcheck.Valid(user, "Email")` omite `Email`.
-- Select: `kcheck.ValidSelect(user, "Address.City")` valida solo ese path.
-- Puedes pasar tanto nombres (`"Email"`) como paths (`"Address.City"`).
+- Skip: `kcheck.Valid(user, "Email")` skips `Email`.
+- Select: `kcheck.ValidSelect(user, "Address.City")` validates only that path.
+- You can pass both field names, such as `"Email"`, and paths, such as `"Address.City"`.
 
-## Errores
+## Errors
 
-El error agregado es `kcheck.Errors` (con `[]FieldError`) y su string:
+The aggregated error is `kcheck.Errors`, containing `[]FieldError`.
 
-- Formato: `"<Path>: <Message>; <Path>: <Message>"`.
-- `Errors.Err()` retorna `nil` si no hubo errores.
+Its string format is:
 
-## Validadores incluidos
+```text
+"<Path>: <Message>; <Path>: <Message>"
+```
 
-Registrados por defecto en `RegisterDefaults()`:
+`Errors.Err()` returns `nil` when there are no errors.
 
-- Requerido: `required`, `nonil`.
-- Longitud/tamaño: `len`, `min`, `max`.
-- Comparadores numéricos: `gt`, `gte`, `lt`, `lte`.
+## Included validators
+
+Registered by default through `RegisterDefaults()`:
+
+- Required: `required`, `nonil`.
+- Length/size: `len`, `min`, `max`.
+- Numeric comparators: `gt`, `gte`, `lt`, `lte`.
 - Strings: `alpha`, `alphanum`, `num`, `decimal`, `lower`, `upper`.
-- Formato: `email`, `uuid` (v4), `url`, `ip`, `ipv4`, `ipv6`.
-- Strings avanzados: `oneof`, `prefix`, `suffix`, `contains`.
-- Fechas: `date` (DateOnly), `time` (TimeOnly), `datetime` (DateTime), `utc` (RFC3339 en UTC o `time.Time` en UTC).
+- Format: `email`, `uuid` v4, `url`, `ip`, `ipv4`, `ipv6`.
+- Advanced strings: `oneof`, `prefix`, `suffix`, `contains`.
+- Dates: `date` using `DateOnly`, `time` using `TimeOnly`, `datetime` using `DateTime`, `utc` using RFC3339 UTC or `time.Time` in UTC.
 
-## Notas
+## Notes
 
-- Input inválido retorna `kcheck.ErrInvalidInput` (nil, puntero nil, o no-struct).
-- `required` soporta `string`, `[]string` y punteros nil (a través de `IsNil`).
+- Invalid input returns `kcheck.ErrInvalidInput`, for example `nil`, nil pointer, or non-struct input.
+- `required` supports `string`, `[]string`, and nil pointers through `IsNil`.

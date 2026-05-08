@@ -1,80 +1,167 @@
 # Skill: `errs`
 
-Paquete para construir errores de aplicación con:
+Package for building application errors with:
 
-- Código HTTP asociado.
-- Mensaje público (apto para API).
-- Error interno opcional (para logging/diagnóstico).
+- An associated HTTP status code.
+- A public message suitable for API responses.
+- An optional internal error for diagnostics.
 
-También incluye mapeo de errores comunes de Postgres (pgx/gorm) a mensajes y códigos HTTP.
+Use this skill whenever an error is going to be propagated to a handler and returned through `answer.Err`.
 
-## Tipo base
+## Base type
 
-`*errs.Err` implementa `error` y expone:
+`*errs.Err` implements `error` and exposes:
 
-- `Message() string` mensaje público.
-- `Code() int` código HTTP.
-- `Wrapped() error` error interno (puede ser `nil`).
+- `Message() string` public API-safe message.
+- `Code() int` HTTP status code.
+- `Wrapped() error` internal error, if any.
 
-`answer.UnwrapErr` reconoce `*errs.Err` y lo convierte a respuesta HTTP.
+The `answer` skill recognizes `*errs.Err` and converts it into a standardized HTTP JSON response.
 
-## Constructores comunes
+## Main rule
 
-Versiones que envuelven un error interno:
+If an error is going to cross application layers and eventually reach an HTTP handler, convert it to an `errs` error.
 
-- `BadRequestError(err, format, args...)` → 400.
-- `NotFoundError(err, format, args...)` → 404.
-- `UnauthorizedError(err, format, args...)` → 401.
-- `ForbiddenError(err, format, args...)` → 403.
-- `UnsupportedMediaTypeError(err, format, args...)` → 415.
-- `InternalError(err, format, args...)` → 500.
+Do not propagate raw database, validation, or internal errors directly to handlers.
 
-Versiones sin error interno (solo mensaje):
-
-- `BadRequestf(format, args...)`, `NotFoundf(...)`, `InternalErrorf(...)`.
-- `BadRequestDirect(message)`, `NotFoundDirect(message)`, `InternalErrorDirect(message)`, `UnauthorizedDirect(message)`, `ForbiddenDirect(message)`, `UnsupportedMediaTypeDirect(message)`.
-
-Otras utilidades:
-
-- `NewWithMessage(err, message)` cambia el mensaje manteniendo el código (si `err` ya es `*Err`); si no, asume 400.
-- `WrapError(err, message, httpCode)` retorna `nil` si `err == nil`.
-- `ContainsMessage(err, substr)` busca en `Message()` cuando `err` es `*Err`.
-- `IsBadRequest(err)`, `IsInternalError(err)`, `IsErr(err)`.
-- `ToSummary(err)` produce un resumen estable (`"Error <code>: <message>"`).
-
-## Postgres / Gorm (`postgres_errors.go`)
-
-`Pgf(err)` convierte errores de DB a `*errs.Err` con mensajes amigables:
-
-- `gorm.ErrRecordNotFound` → 400 con `ErrRecordNotFound`.
-- Errores `*pgconn.PgError` (pgx) se mapean por código SQLSTATE (`PGCode`) a mensaje/código HTTP.
-- Caso especial: `23503` con mensaje de `insert or update` usa un mensaje más específico (`message23503`).
-
-Seguridad y logging:
-
-- Cada código tiene `loggable bool`.
-- Si `loggable == true` o `devmode == true`, el `*Err` conserva el error interno envuelto.
-- Si no, se omite el error interno (`wrapped=nil`) para evitar filtrar detalles.
-
-Personalización:
-
-- `AddPgErrs(code, message, httpCode, loggable)` agrega/override del mapeo.
-- `Devmode()` fuerza `devmode=true`.
-- `IsPgErrCode(err, code)` detecta el SQLSTATE.
-
-## Ejemplo (servicio)
+Recommended flow:
 
 ```go
-func (s *Service) Get(id string) (*User, error) {
-  u, err := s.repo.FindByID(id)
-  if err != nil {
-    return nil, errs.Pgf(err) // o errs.NotFoundError/BadRequestError según aplique
-  }
-  return u, nil
+result, err := usecase.Execute(ctx, req)
+if err != nil {
+	return answer.Err(c, err)
+}
+
+return answer.Ok(c, result)
+```
+
+The handler should only call `answer.Err(c, err)`. The error should already be correctly classified before reaching the handler.
+
+## Common constructors
+
+Use these when wrapping an internal error:
+
+- `BadRequestError(err, format, args...)` → `400`.
+- `NotFoundError(err, format, args...)` → `404`.
+- `UnauthorizedError(err, format, args...)` → `401`.
+- `ForbiddenError(err, format, args...)` → `403`.
+- `UnsupportedMediaTypeError(err, format, args...)` → `415`.
+- `InternalError(err, format, args...)` → `500`.
+
+Use these when there is no internal error to wrap:
+
+- `BadRequestf(format, args...)`.
+- `NotFoundf(format, args...)`.
+- `InternalErrorf(format, args...)`.
+
+Use these when the message is already complete:
+
+- `BadRequestDirect(message)`.
+- `NotFoundDirect(message)`.
+- `InternalErrorDirect(message)`.
+- `UnauthorizedDirect(message)`.
+- `ForbiddenDirect(message)`.
+- `UnsupportedMediaTypeDirect(message)`.
+
+## Other utilities
+
+- `NewWithMessage(err, message)` changes the public message while preserving the code if `err` is already `*Err`; otherwise, it assumes `400`.
+- `WrapError(err, message, httpCode)` returns `nil` if `err == nil`.
+- `ContainsMessage(err, substr)` checks `Message()` when `err` is `*Err`.
+- `IsBadRequest(err)` checks whether an error is a bad request.
+- `IsInternalError(err)` checks whether an error is an internal error.
+- `IsErr(err)` checks whether an error is `*Err`.
+- `ToSummary(err)` returns a stable summary: `"Error <code>: <message>"`.
+
+## Gorm and Postgres errors
+
+All errors returned by Gorm must pass through `errs` before being propagated.
+
+Use `errs.Pgf(err)` for database errors coming from Gorm or pgx.
+
+```go
+func (r *SystemUserRepository) FindSystemUser(ctx context.Context, username string) (*models.SystemUser, error) {
+	tx := r.manager.Conn(ctx)
+
+	var user models.SystemUser
+	rs := tx.Where("username = ?", username).First(&user)
+	if rs.Error != nil {
+		return nil, errs.Pgf(rs.Error)
+	}
+
+	return &user, nil
 }
 ```
 
-## Notas
+`Pgf(err)` converts database errors into `*errs.Err` with public API-safe messages.
 
-- Si el error va a salir por HTTP, construye un `*errs.Err` con mensaje pensado para el cliente.
-- Para detalles internos (stack, SQL, etc.), envuelve el error pero controla `loggable/devmode`.
+It handles:
+
+- `gorm.ErrRecordNotFound`.
+- `*pgconn.PgError` from pgx.
+- SQLSTATE-based Postgres errors.
+- Common constraint errors such as foreign key, unique, invalid input, and related database failures.
+
+Use `IsPgErrCode(err, code)` only when the application needs to branch based on a specific SQLSTATE.
+
+## Service and use case errors
+
+Use `errs` for validation, authorization, domain, and business-rule errors that can reach a handler.
+
+```go
+func (u *ProductUsecase) Find(ctx context.Context, id string) (*models.Product, error) {
+	if id == "" {
+		return nil, errs.BadRequestDirect("product id is required")
+	}
+
+	product, err := u.repo.Find(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
+}
+```
+
+When adding context to an internal failure, wrap the original error:
+
+```go
+func (u *ProductUsecase) Create(ctx context.Context, req CreateProductRequest) error {
+	if req.Name == "" {
+		return errs.BadRequestDirect("product name is required")
+	}
+
+	if err := u.repo.Create(ctx, req); err != nil {
+		return errs.InternalError(err, "could not create product")
+	}
+
+	return nil
+}
+```
+
+## Handler usage
+
+Handlers should not decide database or domain error details. They should return the error through `answer.Err`.
+
+```go
+func ListProducts(usecase *usecases.ProductUsecase) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		products, err := usecase.List(c.Request().Context())
+		if err != nil {
+			return answer.Err(c, err)
+		}
+
+		return answer.Ok(c, products)
+	}
+}
+```
+
+## Recommendations
+
+- Use `errs.Pgf` for all Gorm or pgx errors before propagating them.
+- Use `errs` for every error that may reach an HTTP handler.
+- Do not return raw database errors from repositories.
+- Do not return raw internal errors from use cases when they may reach a handler.
+- Keep public messages clear, stable, and safe for API clients.
+- Wrap internal errors only when the caller needs a public message but diagnostics should be preserved internally.
+- Let handlers delegate error responses to the `answer` skill.
