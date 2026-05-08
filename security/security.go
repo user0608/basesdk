@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"basesdk/errs"
+
 	"github.com/labstack/echo/v4"
 	"github.com/user0608/goones/answer"
-	"github.com/user0608/goones/errs"
 )
 
 type securityContextKey string

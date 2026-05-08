@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"strings"
 
+	"basesdk/errs"
+
 	"github.com/labstack/echo/v4"
-	"github.com/user0608/goones/errs"
 )
 
 func FormFieldJSON(c echo.Context, fieldName string, payload any) error {

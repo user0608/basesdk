@@ -1,8 +1,9 @@
 package binds
 
 import (
+	"basesdk/errs"
+
 	"github.com/labstack/echo/v4"
-	"github.com/user0608/goones/errs"
 )
 
 func From(c echo.Context, payload any) error {

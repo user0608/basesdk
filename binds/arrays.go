@@ -3,9 +3,10 @@ package binds
 import (
 	"encoding/json"
 
+	"basesdk/errs"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/user0608/goones/errs"
 	"github.com/user0608/goones/types"
 )
 

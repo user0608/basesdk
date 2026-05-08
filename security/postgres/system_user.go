@@ -6,7 +6,7 @@ import (
 	"basesdk/security/repositories"
 	"context"
 
-	"github.com/user0608/goones/errs"
+	"basesdk/errs"
 )
 
 type SystemUserRepository struct {

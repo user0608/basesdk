@@ -6,9 +6,10 @@ import (
 	"basesdk/security/usecases"
 	"net/http"
 
+	"basesdk/errs"
+
 	"github.com/labstack/echo/v4"
 	"github.com/user0608/goones/answer"
-	"github.com/user0608/goones/errs"
 	"github.com/user0608/goones/kcheck"
 )
 

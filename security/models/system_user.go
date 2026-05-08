@@ -4,7 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/user0608/goones/errs"
+	"basesdk/errs"
+
 	"golang.org/x/crypto/bcrypt"
 )
 

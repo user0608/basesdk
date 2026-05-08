@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/user0608/goones/errs"
+	"basesdk/errs"
 )
 
 const notFoundFormat = "system property '%s' not found"

@@ -6,8 +6,9 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"basesdk/errs"
+
 	"github.com/labstack/echo/v4"
-	"github.com/user0608/goones/errs"
 )
 
 func FormFileBytesOptional(c echo.Context, fieldName string) ([]byte, error) {
