@@ -3,10 +3,10 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -15,74 +15,103 @@ import (
 
 type DateTimeOnly struct{ time.Time }
 
+var _ json.Marshaler = DateTimeOnly{}
+var _ json.Unmarshaler = (*DateTimeOnly)(nil)
+var _ encoding.TextMarshaler = DateTimeOnly{}
+var _ encoding.TextUnmarshaler = (*DateTimeOnly)(nil)
+var _ gob.GobEncoder = DateTimeOnly{}
+var _ gob.GobDecoder = (*DateTimeOnly)(nil)
+var _ driver.Valuer = DateTimeOnly{}
+var _ sql.Scanner = (*DateTimeOnly)(nil)
+var _ fmt.Stringer = DateTimeOnly{}
+
 func NewDateTimeOnly(t time.Time) DateTimeOnly {
 	str := t.Format(time.DateTime)
 	val, _ := time.Parse(time.DateTime, str)
 	return DateTimeOnly{Time: val}
 }
 
-func (jt DateTimeOnly) ToTimeInLocation(loc *time.Location) time.Time {
+func (do DateTimeOnly) ToTimeInLocation(loc *time.Location) time.Time {
 	if loc == nil {
-		slog.Warn("DateTimeOnly: nil location provided, defaulting to UTC")
 		loc = time.UTC
 	}
-	str := jt.Format(time.DateTime)
-	t, err := time.ParseInLocation(time.DateTime, str, loc)
-	if err != nil {
-		slog.Warn(
-			"DateTimeOnly: failed to convert to time.Time in location",
-			"value", str,
-			"location", loc.String(),
-			"error", err.Error(),
-		)
-		return time.Time{}
-	}
-	return t
-}
 
-var _ json.Marshaler = DateTimeOnly{}
+	return time.Date(
+		do.Year(),
+		do.Month(),
+		do.Day(),
+		do.Hour(),
+		do.Minute(),
+		do.Second(),
+		0,
+		loc,
+	)
+}
 
 func (do DateTimeOnly) MarshalJSON() ([]byte, error) {
 	if do.IsZero() {
 		return []byte("null"), nil
 	}
-	return []byte(`"` + do.Format(time.DateTime) + `"`), nil
+
+	return json.Marshal(do.Format(time.DateTime))
 }
 
-var _ json.Unmarshaler = (*DateTimeOnly)(nil)
-
-func (od *DateTimeOnly) UnmarshalJSON(data []byte) (err error) {
-	value := strings.Trim(string(data), `"`)
+func (do *DateTimeOnly) UnmarshalJSON(data []byte) error {
+	value := strings.TrimSpace(string(data))
 	if value == "" || value == "null" {
+		do.Time = time.Time{}
 		return nil
 	}
-	od.Time, err = time.Parse(time.DateTime, value)
-	return err
+
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return fmt.Errorf("DateTimeOnly: JSON inválido: %w", err)
+	}
+
+	return do.UnmarshalParam(str)
+}
+
+func (do DateTimeOnly) MarshalText() ([]byte, error) {
+	return []byte(do.Format(time.DateTime)), nil
+}
+
+func (do *DateTimeOnly) UnmarshalText(data []byte) error {
+	return do.UnmarshalParam(string(data))
 }
 
 func (do *DateTimeOnly) UnmarshalParam(value string) error {
-	return do.UnmarshalJSON([]byte(value))
-}
+	value = strings.TrimSpace(value)
+	if value == "" || value == "null" {
+		do.Time = time.Time{}
+		return nil
+	}
 
-var _ gob.GobEncoder = DateTimeOnly{}
+	value = strings.Trim(value, `"`)
+	if value == "" || value == "null" {
+		do.Time = time.Time{}
+		return nil
+	}
+
+	t, err := time.Parse(time.DateTime, value)
+	if err != nil {
+		return fmt.Errorf("DateTimeOnly: error al parsear `%s`: %w", value, err)
+	}
+
+	do.Time = t
+	return nil
+}
 
 func (do DateTimeOnly) GobEncode() ([]byte, error) {
 	return json.Marshal(do)
 }
 
-var _ gob.GobDecoder = (*DateTimeOnly)(nil)
-
 func (do *DateTimeOnly) GobDecode(b []byte) error {
 	return json.Unmarshal(b, do)
 }
 
-var _ driver.Valuer = DateTimeOnly{}
-
 func (do DateTimeOnly) Value() (driver.Value, error) {
 	return do.Time.Format(time.DateTime), nil
 }
-
-var _ sql.Scanner = (*DateTimeOnly)(nil)
 
 func (do *DateTimeOnly) Scan(value any) error {
 	switch v := value.(type) {
@@ -131,8 +160,6 @@ func (do *DateTimeOnly) Scan(value any) error {
 	*do = NewDateTimeOnly(do.Time)
 	return nil
 }
-
-var _ fmt.Stringer = DateTimeOnly{}
 
 func (do DateTimeOnly) String() string {
 	return do.Format(time.DateTime)

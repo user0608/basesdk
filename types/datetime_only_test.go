@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"basesdk/types"
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
@@ -8,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/user0608/goones/types"
 )
 
 func TestMarshalJSON(t *testing.T) {
@@ -186,4 +186,148 @@ func TestDateTimeOnly_ToTimeInLocation(t *testing.T) {
 
 		assert.Equal(t, expected.Format(time.RFC3339Nano), result.Format(time.RFC3339Nano))
 	})
+}
+
+func TestDateTimeOnly_MarshalText(t *testing.T) {
+	dt := types.NewDateTimeOnly(time.Date(2025, 8, 22, 15, 30, 45, 0, time.UTC))
+
+	data, err := dt.MarshalText()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22 15:30:45", string(data))
+}
+
+func TestDateTimeOnly_MarshalText_Zero(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	data, err := dt.MarshalText()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "0001-01-01 00:00:00", string(data))
+}
+
+func TestDateTimeOnly_UnmarshalText(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	err := dt.UnmarshalText([]byte("2025-08-22 15:30:45"))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22 15:30:45", dt.String())
+}
+
+func TestDateTimeOnly_UnmarshalText_Quoted(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	err := dt.UnmarshalText([]byte(`"2025-08-22 15:30:45"`))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22 15:30:45", dt.String())
+}
+
+func TestDateTimeOnly_UnmarshalText_EmptyAndNull(t *testing.T) {
+	tests := []string{
+		"",
+		"null",
+		`""`,
+		`"null"`,
+	}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			var dt types.DateTimeOnly
+
+			err := dt.UnmarshalText([]byte(input))
+
+			assert.NoError(t, err)
+			assert.True(t, dt.Time.IsZero())
+			assert.Equal(t, "0001-01-01 00:00:00", dt.String())
+		})
+	}
+}
+
+func TestDateTimeOnly_UnmarshalText_Invalid(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	err := dt.UnmarshalText([]byte("invalid-datetime"))
+
+	assert.Error(t, err)
+}
+
+func TestDateTimeOnly_UnmarshalParam_RawValue(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	err := dt.UnmarshalParam("2025-08-22 15:30:45")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22 15:30:45", dt.String())
+}
+
+func TestDateTimeOnly_UnmarshalParam_EmptyAndNull(t *testing.T) {
+	tests := []string{
+		"",
+		"null",
+		`""`,
+		`"null"`,
+	}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			var dt types.DateTimeOnly
+
+			err := dt.UnmarshalParam(input)
+
+			assert.NoError(t, err)
+			assert.True(t, dt.Time.IsZero())
+			assert.Equal(t, "0001-01-01 00:00:00", dt.String())
+		})
+	}
+}
+
+func TestDateTimeOnly_UnmarshalJSON_InvalidType(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	err := json.Unmarshal([]byte(`123`), &dt)
+
+	assert.Error(t, err)
+}
+
+func TestDateTimeOnly_UnmarshalJSON_EmptyString(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	err := json.Unmarshal([]byte(`""`), &dt)
+
+	assert.NoError(t, err)
+	assert.True(t, dt.Time.IsZero())
+	assert.Equal(t, "0001-01-01 00:00:00", dt.String())
+}
+
+func TestDateTimeOnly_ScanNilPointers(t *testing.T) {
+	tests := []struct {
+		name  string
+		input any
+	}{
+		{"nil *time.Time", (*time.Time)(nil)},
+		{"nil *DateTimeOnly", (*types.DateTimeOnly)(nil)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dt := types.NewDateTimeOnly(time.Date(2025, 8, 22, 15, 30, 45, 0, time.UTC))
+
+			err := dt.Scan(tt.input)
+
+			assert.NoError(t, err)
+			assert.True(t, dt.Time.IsZero())
+			assert.Equal(t, "0001-01-01 00:00:00", dt.String())
+		})
+	}
+}
+
+func TestDateTimeOnly_Value_Zero(t *testing.T) {
+	var dt types.DateTimeOnly
+
+	val, err := dt.Value()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "0001-01-01 00:00:00", val)
 }

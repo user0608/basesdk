@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"basesdk/types"
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/user0608/goones/types"
 )
 
 func TestNewDateOnlyFromString(t *testing.T) {
@@ -315,6 +315,15 @@ func TestDateOnly_StartAndEndOfDayUTC_UTCZone(t *testing.T) {
 	}
 }
 
+func TestDateOnly_ScanStringDateTimeFallback(t *testing.T) {
+	var d types.DateOnly
+
+	err := d.Scan("2025-08-17T15:30:45Z")
+
+	assert.NoError(t, err)
+	assert.Equal(t, time.Date(2025, 8, 17, 0, 0, 0, 0, time.UTC), d.Time)
+}
+
 func TestDateOnly_BuildUTCDayRange(t *testing.T) {
 	loc, err := time.LoadLocation("America/Lima")
 	if err != nil {
@@ -461,6 +470,163 @@ func TestDateOnly_BuildUTCDayRange_UTC(t *testing.T) {
 			if gotEnd != tt.expectedEnd {
 				t.Errorf("end mismatch: expected %s, got %s", tt.expectedEnd, gotEnd)
 			}
+		})
+	}
+}
+
+func TestDateOnly_MarshalText(t *testing.T) {
+	d := types.NewDateOnly(time.Date(2025, 8, 22, 14, 30, 0, 0, time.UTC))
+
+	data, err := d.MarshalText()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22", string(data))
+}
+
+func TestDateOnly_MarshalText_Zero(t *testing.T) {
+	var d types.DateOnly
+
+	data, err := d.MarshalText()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "0001-01-01", string(data))
+}
+
+func TestDateOnly_UnmarshalText(t *testing.T) {
+	var d types.DateOnly
+
+	err := d.UnmarshalText([]byte("2025-08-22"))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22", d.String())
+}
+
+func TestDateOnly_UnmarshalText_Quoted(t *testing.T) {
+	var d types.DateOnly
+
+	err := d.UnmarshalText([]byte(`"2025-08-22"`))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "2025-08-22", d.String())
+}
+
+func TestDateOnly_UnmarshalText_Empty(t *testing.T) {
+	var d types.DateOnly
+
+	err := d.UnmarshalText([]byte(""))
+
+	assert.NoError(t, err)
+	assert.True(t, d.Time.IsZero())
+	assert.Equal(t, "0001-01-01", d.String())
+}
+
+func TestDateOnly_UnmarshalText_Invalid(t *testing.T) {
+	var d types.DateOnly
+
+	err := d.UnmarshalText([]byte("invalid-date"))
+
+	assert.Error(t, err)
+}
+
+func TestDateOnly_UnmarshalJSON_InvalidType(t *testing.T) {
+	var d types.DateOnly
+
+	err := json.Unmarshal([]byte(`123`), &d)
+
+	assert.Error(t, err)
+}
+
+func TestDateOnly_UnmarshalJSON_EmptyString(t *testing.T) {
+	var d types.DateOnly
+
+	err := json.Unmarshal([]byte(`""`), &d)
+
+	assert.NoError(t, err)
+	assert.True(t, d.Time.IsZero())
+	assert.Equal(t, "0001-01-01", d.String())
+}
+
+func TestDateOnly_UnmarshalParam_EmptyAndNull(t *testing.T) {
+	tests := []string{"", "null", `"null"`, `""`}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			var d types.DateOnly
+
+			err := d.UnmarshalParam(input)
+
+			assert.NoError(t, err)
+			assert.True(t, d.Time.IsZero())
+			assert.Equal(t, "0001-01-01", d.String())
+		})
+	}
+}
+
+func TestDateOnly_ToTimeInLocation_NilLocationDefaultsUTC(t *testing.T) {
+	d := types.NewDateOnly(time.Date(2025, 8, 22, 14, 30, 0, 0, time.UTC))
+
+	result := d.ToTimeInLocation(nil)
+
+	assert.Equal(t, time.UTC, result.Location())
+	assert.Equal(t, time.Date(2025, 8, 22, 0, 0, 0, 0, time.UTC), result)
+}
+
+func TestDateOnly_StartAndEndOfDayInLocation(t *testing.T) {
+	loc, err := time.LoadLocation("America/Lima")
+	assert.NoError(t, err)
+
+	d := types.NewDateOnly(time.Date(2025, 8, 22, 14, 30, 0, 0, time.UTC))
+
+	start := d.StartOfDayInLocation(loc)
+	end := d.EndOfDayInLocation(loc)
+
+	expectedStart := time.Date(2025, 8, 22, 0, 0, 0, 0, loc)
+	expectedEnd := time.Date(2025, 8, 22, 23, 59, 59, int(time.Second-time.Nanosecond), loc)
+
+	assert.Equal(t, expectedStart, start)
+	assert.Equal(t, expectedEnd, end)
+}
+
+func TestDateOnly_StartAndEndOfDayInLocation_NilLocationDefaultsUTC(t *testing.T) {
+	d := types.NewDateOnly(time.Date(2025, 8, 22, 14, 30, 0, 0, time.UTC))
+
+	start := d.StartOfDayInLocation(nil)
+	end := d.EndOfDayInLocation(nil)
+
+	expectedStart := time.Date(2025, 8, 22, 0, 0, 0, 0, time.UTC)
+	expectedEnd := time.Date(2025, 8, 22, 23, 59, 59, int(time.Second-time.Nanosecond), time.UTC)
+
+	assert.Equal(t, expectedStart, start)
+	assert.Equal(t, expectedEnd, end)
+}
+
+func TestOnlyDateValue_Zero(t *testing.T) {
+	var d types.DateOnly
+
+	val, err := d.Value()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "0001-01-01", val)
+}
+
+func TestDateOnly_ScanNilPointers(t *testing.T) {
+	tests := []struct {
+		name  string
+		input any
+	}{
+		{"nil *time.Time", (*time.Time)(nil)},
+		{"nil *DateOnly", (*types.DateOnly)(nil)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := types.NewDateOnly(time.Date(2025, 8, 22, 0, 0, 0, 0, time.UTC))
+
+			err := d.Scan(tt.input)
+
+			assert.NoError(t, err)
+			assert.True(t, d.Time.IsZero())
+			assert.Equal(t, "0001-01-01", d.String())
 		})
 	}
 }

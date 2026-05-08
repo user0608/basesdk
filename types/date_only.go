@@ -3,10 +3,10 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -15,12 +15,21 @@ import (
 
 type DateOnly struct{ time.Time }
 
+var _ json.Marshaler = DateOnly{}
+var _ json.Unmarshaler = (*DateOnly)(nil)
+var _ encoding.TextMarshaler = DateOnly{}
+var _ encoding.TextUnmarshaler = (*DateOnly)(nil)
+var _ gob.GobEncoder = DateOnly{}
+var _ gob.GobDecoder = (*DateOnly)(nil)
+var _ driver.Valuer = DateOnly{}
+var _ sql.Scanner = (*DateOnly)(nil)
+
 func NewDateOnlyFromString(value string) (DateOnly, error) {
-	var jt DateOnly
-	if err := jt.UnmarshalJSON([]byte(value)); err != nil {
-		return jt, err
+	var do DateOnly
+	if err := do.UnmarshalParam(value); err != nil {
+		return do, err
 	}
-	return jt, nil
+	return do, nil
 }
 
 func NewDateOnly(t time.Time) DateOnly {
@@ -29,80 +38,55 @@ func NewDateOnly(t time.Time) DateOnly {
 	return DateOnly{Time: val}
 }
 
-func (jt DateOnly) ToTimeInLocation(loc *time.Location) time.Time {
+func (do DateOnly) ToTimeInLocation(loc *time.Location) time.Time {
 	if loc == nil {
-		slog.Warn("DateOnly: nil location provided, defaulting to UTC")
 		loc = time.UTC
 	}
 
-	str := jt.Format(time.DateOnly)
-	t, err := time.ParseInLocation(time.DateOnly, str, loc)
-	if err != nil {
-		slog.Warn(
-			"DateOnly: failed to convert to time.Time in location",
-			"value", str,
-			"location", loc.String(),
-			"error", err.Error(),
-		)
-		return time.Time{}
-	}
-
-	return t
-}
-
-func (jt DateOnly) ToUTCDayRange(loc *time.Location) (time.Time, time.Time) {
-	day := jt.ToTimeInLocation(loc)
-	start := time.Date(
-		day.Year(),
-		day.Month(),
-		day.Day(), 0, 0, 0, 0,
-		day.Location(),
-	).UTC()
-	end := time.Date(
-		day.Year(),
-		day.Month(),
-		day.Day(), 23, 59, 59,
-		int(time.Second-time.Nanosecond),
-		day.Location(),
-	).UTC()
-	return start, end
-}
-
-func (jt DateOnly) StartOfDayUTC(loc *time.Location) time.Time {
-	day := jt.ToTimeInLocation(loc)
-	start := time.Date(
-		day.Year(),
-		day.Month(),
-		day.Day(),
+	return time.Date(
+		do.Year(),
+		do.Month(),
+		do.Day(),
 		0, 0, 0, 0,
-		day.Location(),
-	).UTC()
-	return start
+		loc,
+	)
 }
 
-func (jt DateOnly) EndOfDayUTC(loc *time.Location) time.Time {
-	day := jt.ToTimeInLocation(loc)
-	end := time.Date(
+func (do DateOnly) StartOfDayInLocation(loc *time.Location) time.Time {
+	return do.ToTimeInLocation(loc)
+}
+
+func (do DateOnly) EndOfDayInLocation(loc *time.Location) time.Time {
+	day := do.ToTimeInLocation(loc)
+
+	return time.Date(
 		day.Year(),
 		day.Month(),
 		day.Day(),
 		23, 59, 59,
 		int(time.Second-time.Nanosecond),
 		day.Location(),
-	).UTC()
-	return end
+	)
 }
 
-// BuildUTCDayRange builds a UTC time range from a base date (DateOnly)
-// and two times (start and end). If the end time is earlier than the start time,
-// it is assumed to belong to the following day.
-func (jt DateOnly) BuildUTCDayRange(loc *time.Location, start, end JustTime) (time.Time, time.Time) {
-	day := jt.ToTimeInLocation(loc)
+func (do DateOnly) StartOfDayUTC(loc *time.Location) time.Time {
+	return do.StartOfDayInLocation(loc).UTC()
+}
+
+func (do DateOnly) EndOfDayUTC(loc *time.Location) time.Time {
+	return do.EndOfDayInLocation(loc).UTC()
+}
+
+func (do DateOnly) ToUTCDayRange(loc *time.Location) (time.Time, time.Time) {
+	return do.StartOfDayUTC(loc), do.EndOfDayUTC(loc)
+}
+
+func (do DateOnly) BuildUTCDayRange(loc *time.Location, start, end JustTime) (time.Time, time.Time) {
+	day := do.StartOfDayInLocation(loc)
 
 	left := day.Add(time.Duration(start))
 	right := day.Add(time.Duration(end))
 
-	// if the end time is less than or equal to the start time → add one day
 	if !right.After(left) {
 		right = right.Add(24 * time.Hour)
 	}
@@ -110,49 +94,72 @@ func (jt DateOnly) BuildUTCDayRange(loc *time.Location, start, end JustTime) (ti
 	return left.UTC(), right.UTC()
 }
 
-var _ json.Marshaler = DateOnly{}
-
 func (do DateOnly) MarshalJSON() ([]byte, error) {
 	if do.IsZero() {
 		return []byte("null"), nil
 	}
-	return []byte(`"` + do.Format(time.DateOnly) + `"`), nil
+
+	return json.Marshal(do.Format(time.DateOnly))
 }
 
-var _ json.Unmarshaler = (*DateOnly)(nil)
-
-func (od *DateOnly) UnmarshalJSON(data []byte) (err error) {
-	value := strings.Trim(string(data), `"`)
+func (do *DateOnly) UnmarshalJSON(data []byte) error {
+	value := strings.TrimSpace(string(data))
 	if value == "" || value == "null" {
+		do.Time = time.Time{}
 		return nil
 	}
-	od.Time, err = time.Parse(time.DateOnly, value)
-	return
+
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return fmt.Errorf("DateOnly: JSON inválido: %w", err)
+	}
+
+	return do.UnmarshalParam(str)
 }
 
-func (do *DateOnly) UnmarshalParam(value string) (err error) {
-	return do.UnmarshalJSON([]byte(value))
+func (do DateOnly) MarshalText() ([]byte, error) {
+	return []byte(do.Format(time.DateOnly)), nil
 }
 
-var _ gob.GobEncoder = DateOnly{}
+func (do *DateOnly) UnmarshalText(data []byte) error {
+	return do.UnmarshalParam(string(data))
+}
+
+func (do *DateOnly) UnmarshalParam(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" || value == "null" {
+		do.Time = time.Time{}
+		return nil
+	}
+
+	value = strings.Trim(value, `"`)
+	if value == "" || value == "null" {
+		do.Time = time.Time{}
+		return nil
+	}
+
+	t, err := time.Parse(time.DateOnly, value)
+	if err != nil {
+		return fmt.Errorf("DateOnly: error al parsear `%s`: %w", value, err)
+	}
+
+	do.Time = t
+	return nil
+}
 
 func (do DateOnly) GobEncode() ([]byte, error) {
 	return json.Marshal(do)
 }
 
-var _ gob.GobDecoder = (*DateOnly)(nil)
-
-func (do *DateOnly) GobDecode(b []byte) error { return json.Unmarshal(b, do) }
-
-var _ driver.Valuer = DateOnly{}
+func (do *DateOnly) GobDecode(b []byte) error {
+	return json.Unmarshal(b, do)
+}
 
 func (do DateOnly) Value() (driver.Value, error) {
 	return do.Time.Format(time.DateOnly), nil
 }
 
-var _ sql.Scanner = (*DateOnly)(nil)
-
-func (do *DateOnly) Scan(value any) (err error) {
+func (do *DateOnly) Scan(value any) error {
 	switch v := value.(type) {
 	case nil:
 		do.Time = time.Time{}
@@ -200,4 +207,6 @@ func (do *DateOnly) Scan(value any) (err error) {
 	return nil
 }
 
-func (do DateOnly) String() string { return do.Format(time.DateOnly) }
+func (do DateOnly) String() string {
+	return do.Format(time.DateOnly)
+}
