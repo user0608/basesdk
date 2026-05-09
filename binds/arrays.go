@@ -62,6 +62,9 @@ func RequestStrings(c echo.Context) ([]string, error) {
 
 		"id",
 		"ids",
+
+		"username",
+		"usernames",
 	}
 
 	for _, k := range keys {

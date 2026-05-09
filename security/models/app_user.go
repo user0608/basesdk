@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"basesdk/errs"
@@ -78,6 +79,25 @@ func (u *AppUser) ValidatePassword(plain string) error {
 	if err != nil {
 		return errs.BadRequestDirect("usuario o contraseña invalidos")
 	}
+
+	return nil
+}
+
+func (u *AppUser) ChangePassword(plain string) error {
+	if plain == "" {
+		return errs.BadRequestDirect("la contraseña no puede estar vacía")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
+			return errs.BadRequestDirect("la contraseña es demasiado larga")
+		}
+		return errs.BadRequestDirect("no se pudo generar la contraseña")
+	}
+
+	passwordHash := string(hash)
+	u.PasswordHash = &passwordHash
 
 	return nil
 }
