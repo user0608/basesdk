@@ -18,7 +18,7 @@ func TestTenantSystemPropertiesCRUD(t *testing.T) {
 
 	description := "Tenant file storage path"
 	property := &properties.TenantSystemProperty{
-		TenantCodigo: "local",
+		TenantCodigo: "tenant_default",
 		Key:          "file_storage_path",
 		Value:        "/var/app/tenant-default/files",
 		DataType:     "string",
@@ -61,7 +61,7 @@ func TestTenantSystemPropertiesAreScopedByTenant(t *testing.T) {
 	createTenant(t, storage, "tenant_two")
 
 	require.NoError(t, props.Create(ctx, &properties.TenantSystemProperty{
-		TenantCodigo: "local",
+		TenantCodigo: "tenant_default",
 		Key:          "external_sync_enabled",
 		Value:        "true",
 		DataType:     "bool",
@@ -73,7 +73,7 @@ func TestTenantSystemPropertiesAreScopedByTenant(t *testing.T) {
 		DataType:     "bool",
 	}))
 
-	defaultEnabled, err := props.GetBool(ctx, "local", "external_sync_enabled", false)
+	defaultEnabled, err := props.GetBool(ctx, "tenant_default", "external_sync_enabled", false)
 	require.NoError(t, err)
 	require.True(t, defaultEnabled)
 
@@ -81,17 +81,17 @@ func TestTenantSystemPropertiesAreScopedByTenant(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, tenantTwoEnabled)
 
-	allDefault, err := props.GetAll(ctx, "local")
+	allDefault, err := props.GetAll(ctx, "tenant_default")
 	require.NoError(t, err)
 	require.Len(t, allDefault, 1)
-	require.Equal(t, "local", allDefault[0].TenantCodigo)
+	require.Equal(t, "tenant_default", allDefault[0].TenantCodigo)
 }
 
 func TestTenantSystemPropertiesTypedReaders(t *testing.T) {
 	storage := testdb.NewPostgresStorage(t)
 	props := properties.NewTenantSystemProperties(storage)
 	ctx := context.Background()
-	tenantCodigo := "local"
+	tenantCodigo := "tenant_default"
 
 	entries := []*properties.TenantSystemProperty{
 		{TenantCodigo: tenantCodigo, Key: "tenant_max_upload_mb", Value: "25", DataType: "int"},
@@ -139,7 +139,7 @@ func TestTenantSystemPropertiesDefaultsAndInvalidValues(t *testing.T) {
 	storage := testdb.NewPostgresStorage(t)
 	props := properties.NewTenantSystemProperties(storage)
 	ctx := context.Background()
-	tenantCodigo := "local"
+	tenantCodigo := "tenant_default"
 
 	value, err := props.GetString(ctx, tenantCodigo, "missing_path", "/tmp/default")
 	require.NoError(t, err)

@@ -45,14 +45,14 @@ func TestSecurityUsecaseTenantUserLogin(t *testing.T) {
 	usecase, tokenService := newSecurityUsecase(t, storage)
 	ctx := context.Background()
 
-	token, err := usecase.TenantUserLogin(ctx, "local", "kevin", "maira002")
+	token, err := usecase.TenantUserLogin(ctx, "tenant_default", "kevin", "maira002")
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
 	claims, err := tokenService.ValidateToken(ctx, token)
 	require.NoError(t, err)
 	require.Equal(t, jwt.TypeTenant, claims.Type)
-	require.Equal(t, "local", claims.Tenant)
+	require.Equal(t, "tenant_default", claims.Tenant)
 	require.Equal(t, "kevin", claims.Subject)
 	require.Equal(t, "America/Lima", claims.TimeZone)
 }
@@ -61,7 +61,7 @@ func TestSecurityUsecaseTenantUserLoginRejectsInvalidPassword(t *testing.T) {
 	storage := testdb.NewPostgresStorage(t)
 	usecase, _ := newSecurityUsecase(t, storage)
 
-	token, err := usecase.TenantUserLogin(context.Background(), "local", "kevin", "wrong")
+	token, err := usecase.TenantUserLogin(context.Background(), "tenant_default", "kevin", "wrong")
 	require.Error(t, err)
 	require.Empty(t, token)
 }

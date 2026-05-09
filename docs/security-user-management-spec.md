@@ -25,6 +25,7 @@ There are two endpoint groups:
 ## Non-Goals
 
 - No endpoints to create, update, disable, enable, or delete permissions.
+- Permissions are system-defined migration data and must not have audit fields.
 - No standalone repository tests.
 - No standalone usecase tests.
 - No custom Echo route registration outside `httpapi.NewServer` and `httpapi.AsRoute`.
@@ -380,7 +381,7 @@ User response:
 
 ```json
 {
-  "tenantCodigo": "local",
+  "tenantCodigo": "tenant_default",
   "username": "kevin",
   "email": "kevin@local",
   "fullName": "Kevin",
@@ -395,7 +396,7 @@ Role response:
 
 ```json
 {
-  "tenantCodigo": "local",
+  "tenantCodigo": "tenant_default",
   "code": "SUPER_ADMIN",
   "description": "Full access role.",
   "disabled": false
@@ -406,7 +407,7 @@ Group response:
 
 ```json
 {
-  "tenantCodigo": "local",
+  "tenantCodigo": "tenant_default",
   "code": "OPERATIONS",
   "description": "Operations team",
   "disabled": false
@@ -426,7 +427,7 @@ Effective user permissions response:
 
 ```json
 {
-  "tenantCodigo": "local",
+  "tenantCodigo": "tenant_default",
   "username": "kevin",
   "permissions": [
     {
@@ -469,7 +470,7 @@ Effective user permissions response:
 
 - Add handler e2e tests using `httpapi.NewServer`.
 - Use `testdb.NewPostgresStorage(t)`.
-- Use `auth.NewDefaultAuthenticatedSecurityMiddleware()` for tenant and system authenticated server tests.
+- Use `auth.NewTestSecurityMiddleware()` for tenant and system authenticated server tests.
 - Do not add standalone repository or usecase tests.
 
 ## Open Decisions

@@ -38,14 +38,14 @@ func (r *PermissionRepository) FindPermission(ctx context.Context, code string) 
 func (r *PermissionRepository) FindUserPermissions(ctx context.Context, tenantCodigo string, username string) ([]models.Permission, error) {
 	var permissions []models.Permission
 	rs := r.manager.Conn(ctx).Raw(`
-		select distinct p.code, p.description, p.created_by, p.created_at, p.updated_by, p.updated_at
+		select distinct p.code, p.description
 		from permission p
 		join role_permission rp on rp.permission_code = p.code
 		join role r on r.tenant_codigo = rp.tenant_codigo and r.code = rp.role_code
 		join user_role ur on ur.tenant_codigo = rp.tenant_codigo and ur.role_code = rp.role_code
 		where ur.tenant_codigo = ? and ur.username = ? and r.disabled = false
 		union
-		select distinct p.code, p.description, p.created_by, p.created_at, p.updated_by, p.updated_at
+		select distinct p.code, p.description
 		from permission p
 		join role_permission rp on rp.permission_code = p.code
 		join role r on r.tenant_codigo = rp.tenant_codigo and r.code = rp.role_code

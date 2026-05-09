@@ -23,6 +23,16 @@ func WithMigrations(m ...fs.FS) Option {
 	}
 }
 
+func WithPermissions(p ...fs.FS) Option {
+	return func(s *Service) {
+		for _, fsys := range p {
+			if fsys != nil {
+				s.permissions = append(s.permissions, fsys)
+			}
+		}
+	}
+}
+
 func WithConfigPathProvider(fn configs.ConfigPathProvider) Option {
 	return func(s *Service) {
 		s.configPathProvider = fn

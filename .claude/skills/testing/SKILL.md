@@ -111,7 +111,7 @@ func newLoginTestServer(t *testing.T) (*httptest.Server, *jwt.TokenService) {
 
 	storage := testdb.NewPostgresStorage(t)
 	usecase, tokenService := newSecurityUsecase(t, storage)
-	securityMiddleware := auth.NewDefaultAuthenticatedSecurityMiddleware()
+	securityMiddleware := auth.NewTestSecurityMiddleware()
 
 	server := httpapi.NewServer(
 		[]httpapi.Route{
@@ -181,9 +181,9 @@ Use the real `server.URL` only when the test specifically needs client/network b
 
 Use focused servers for each endpoint type:
 
-- Public endpoints: include only public routes and pass `auth.NewDefaultAuthenticatedSecurityMiddleware()` as the required server dependency.
-- System endpoints: include system routes and pass `auth.NewDefaultAuthenticatedSecurityMiddleware()` to simulate a valid system session.
-- Tenant endpoints: include tenant routes and pass `auth.NewDefaultAuthenticatedSecurityMiddleware()` to simulate `kevin/local/America/Lima`.
+- Public endpoints: include only public routes and pass `auth.NewTestSecurityMiddleware()` as the required server dependency.
+- System endpoints: include system routes and pass `auth.NewTestSecurityMiddleware()` to simulate a valid system session.
+- Tenant endpoints: include tenant routes and pass `auth.NewTestSecurityMiddleware()` to simulate `kevin/tenant_default/America/Lima`.
 
 Example:
 
@@ -192,21 +192,15 @@ server := httpapi.NewServer(
 	[]httpapi.Route{
 		handlers.SomeTenantHandler(usecase),
 	},
-	auth.NewDefaultAuthenticatedSecurityMiddleware(),
+	auth.NewTestSecurityMiddleware(),
 )
-```
-
-Use `auth.NewAuthenticatedSecurityMiddleware(username, tenant, timeZone)` when the test needs a specific authenticated identity.
-
-```go
-securityMiddleware := auth.NewAuthenticatedSecurityMiddleware("admin", "acme", "UTC")
 ```
 
 ## Real JWT Middleware
 
 Use `auth.NewSecurityMiddleware(tokenService)` only when the e2e test is specifically validating JWT behavior, token validation, token type rejection, or Authorization header handling.
 
-For normal handler e2e tests, prefer `auth.NewDefaultAuthenticatedSecurityMiddleware()` so the test focuses on endpoint behavior and not JWT mechanics.
+For normal handler e2e tests, prefer `auth.NewTestSecurityMiddleware()` so the test focuses on endpoint behavior and not JWT mechanics.
 
 ## Public Endpoints
 
@@ -219,7 +213,7 @@ server := httpapi.NewServer(
 	[]httpapi.Route{
 		handlers.LoginHandler(usecase),
 	},
-	auth.NewDefaultAuthenticatedSecurityMiddleware(),
+	auth.NewTestSecurityMiddleware(),
 )
 ```
 

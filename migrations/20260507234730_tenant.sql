@@ -34,7 +34,7 @@ insert into tenant
 )
 values
 (
-    'local',
+    'tenant_default',
     'Default Tenant',
     'America/Lima',
     999999,
@@ -129,11 +129,6 @@ create table permission
     code varchar(150) not null,
 
     description varchar(500),
-
-    created_by varchar(100) not null,
-    created_at timestamp without time zone not null,
-    updated_by varchar(100),
-    updated_at timestamp without time zone,
 
     constraint pk_permission
     primary key (code)
@@ -283,7 +278,7 @@ insert into app_user
 )
 values
 (
-    'local',
+    'tenant_default',
     'kevin',
     'kevin@local',
     'Kevin',
@@ -307,7 +302,7 @@ insert into role
 )
 values
 (
-    'local',
+    'tenant_default',
     'SUPER_ADMIN',
     'Full access role.',
     false,
@@ -325,7 +320,7 @@ insert into user_role
 )
 values
 (
-    'local',
+    'tenant_default',
     'kevin',
     'SUPER_ADMIN',
     'kevin',
@@ -349,7 +344,7 @@ select
 from role role_super_admin
 cross join permission
 where
-    role_super_admin.tenant_codigo = 'local'
+    role_super_admin.tenant_codigo = 'tenant_default'
     and role_super_admin.code = 'SUPER_ADMIN';
 
 -- +goose StatementEnd

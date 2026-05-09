@@ -59,7 +59,7 @@ func TestSystemLoginE2E(t *testing.T) {
 func TestTenantLoginE2E(t *testing.T) {
 	server, tokenService := newLoginTestServer(t)
 
-	response := executeLoginRequest(t, server, "/api/v1/tenants/local/auth/login", `{
+	response := executeLoginRequest(t, server, "/api/v1/tenants/tenant_default/auth/login", `{
 		"username": "kevin",
 		"password": "maira002"
 	}`)
@@ -72,7 +72,7 @@ func TestTenantLoginE2E(t *testing.T) {
 	claims, err := tokenService.ValidateToken(context.Background(), token)
 	require.NoError(t, err)
 	require.Equal(t, jwt.TypeTenant, claims.Type)
-	require.Equal(t, "local", claims.Tenant)
+	require.Equal(t, "tenant_default", claims.Tenant)
 	require.Equal(t, "kevin", claims.Subject)
 	require.Equal(t, "America/Lima", claims.TimeZone)
 }
@@ -80,7 +80,7 @@ func TestTenantLoginE2E(t *testing.T) {
 func TestTenantLoginE2ERejectsInvalidPassword(t *testing.T) {
 	server, _ := newLoginTestServer(t)
 
-	response := executeLoginRequest(t, server, "/api/v1/tenants/local/auth/login", `{
+	response := executeLoginRequest(t, server, "/api/v1/tenants/tenant_default/auth/login", `{
 		"username": "kevin",
 		"password": "wrong"
 	}`)

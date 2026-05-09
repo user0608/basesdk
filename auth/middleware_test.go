@@ -10,14 +10,14 @@ import (
 )
 
 func TestDefaultAuthenticatedSecurityMiddlewareTenantContext(t *testing.T) {
-	middleware := NewDefaultAuthenticatedSecurityMiddleware()
+	middleware := NewTestSecurityMiddleware()
 
 	server := echo.New()
 	server.GET("/", func(c echo.Context) error {
 		ctx := c.Request().Context()
 
 		require.Equal(t, "kevin", Username(ctx))
-		require.Equal(t, "local", Tenant(ctx))
+		require.Equal(t, "tenant_default", Tenant(ctx))
 
 		location, err := Tz(ctx)
 		require.NoError(t, err)
@@ -35,7 +35,7 @@ func TestDefaultAuthenticatedSecurityMiddlewareTenantContext(t *testing.T) {
 }
 
 func TestDefaultAuthenticatedSecurityMiddlewareSystemContext(t *testing.T) {
-	middleware := NewDefaultAuthenticatedSecurityMiddleware()
+	middleware := NewTestSecurityMiddleware()
 
 	server := echo.New()
 	server.GET("/", func(c echo.Context) error {

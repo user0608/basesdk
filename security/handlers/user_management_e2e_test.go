@@ -143,7 +143,7 @@ func newUserManagementTestServer(t *testing.T) *httptest.Server {
 			handlers.TenantPermissionsListHandler(permissionsUsecase),
 			handlers.TenantPermissionFindHandler(permissionsUsecase),
 		},
-		auth.NewDefaultAuthenticatedSecurityMiddleware(),
+		auth.NewTestSecurityMiddleware(),
 	)
 
 	testServer := httptest.NewServer(server)
@@ -156,8 +156,8 @@ func seedTestPermission(t *testing.T, storage connection.StorageManager) {
 	t.Helper()
 
 	err := storage.Conn(context.Background()).Exec(`
-		insert into permission (code, description, created_by, created_at)
-		values ('users.read', 'Read users', 'kevin', now())
+		insert into permission (code, description)
+		values ('users.read', 'Read users')
 	`).Error
 	require.NoError(t, err)
 }

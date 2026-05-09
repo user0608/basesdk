@@ -11,6 +11,8 @@ import (
 	"basesdk/security/repositories"
 	"basesdk/security/usecases"
 	"basesdk/setup/migrations"
+	setuppermissions "basesdk/setup/permissions"
+	"context"
 	"io/fs"
 	"os"
 
@@ -20,6 +22,7 @@ import (
 type Service struct {
 	version                    string
 	migrations                 []fs.FS
+	permissions                []fs.FS
 	configPathProvider         configs.ConfigPathProvider
 	applicationConfigsProvider configs.ApplicationConfigsProvider
 }
@@ -45,6 +48,7 @@ func (s *Service) Run(opts ...fx.Option) {
 
 	options := append(s.baseOptions(), s.applicationOptions()...)
 	options = append(options, opts...)
+	options = append(options, fx.Invoke(syncPermissions))
 	options = append(options, fx.Invoke(httpapi.StartWebServer))
 
 	fx.New(options...).Run()
@@ -57,12 +61,21 @@ func (s *Service) baseOptions() []fx.Option {
 		fx.Provide(
 			migrations.ProvideFSSources(basesdk.MigrationsFS),
 			migrations.ProvideFSSources(s.migrations...),
+			setuppermissions.ProvideFSSources(s.permissions...),
 			fx.Annotate(
 				migrations.NewMigrationRunner,
 				fx.ParamTags(``, migrations.GroupFSSources),
 			),
+			fx.Annotate(
+				setuppermissions.NewPermissionSynchronizer,
+				fx.ParamTags(``, setuppermissions.GroupFSSources),
+			),
 		),
 	}
+}
+
+func syncPermissions(synchronizer *setuppermissions.PermissionSynchronizer) error {
+	return synchronizer.Run(context.Background())
 }
 
 func (s *Service) applicationOptions() []fx.Option {
