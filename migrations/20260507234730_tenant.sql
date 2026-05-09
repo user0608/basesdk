@@ -44,7 +44,6 @@ values
     now()
 );
 
-
 create table tenant_system_properties
 (
     key varchar(150) not null,
@@ -310,6 +309,17 @@ values
     now()
 );
 
+insert into permission
+(
+    code,
+    description
+)
+values
+(
+    'admin',
+    'Administrator permission.'
+);
+
 insert into user_role
 (
     tenant_codigo,
@@ -335,17 +345,14 @@ insert into role_permission
     created_by,
     created_at
 )
-select
-    role_super_admin.tenant_codigo,
-    role_super_admin.code as role_code,
-    permission.code as permission_code,
-    'kevin' as created_by,
-    now() as created_at
-from role role_super_admin
-cross join permission
-where
-    role_super_admin.tenant_codigo = 'tenant_default'
-    and role_super_admin.code = 'SUPER_ADMIN';
+values
+(
+    'tenant_default',
+    'SUPER_ADMIN',
+    'admin',
+    'kevin',
+    now()
+);
 
 -- +goose StatementEnd
 

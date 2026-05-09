@@ -8,7 +8,7 @@ create table system_properties
 
     data_type varchar(20) not null,
     constraint system_properties_data_type_check
-        check (data_type in ('string', 'int', 'float', 'bool', 'json')),
+    check (data_type in ('string', 'int', 'float', 'bool', 'json')),
 
     description varchar(255)
 );

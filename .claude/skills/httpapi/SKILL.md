@@ -42,6 +42,8 @@ The built-in handlers support these fields:
 - `Path string`: Echo route path.
 - `BeforeMiddlewares []echo.MiddlewareFunc`: middleware applied before security.
 - `Middlewares []echo.MiddlewareFunc`: middleware applied after security.
+- `RequiredPerms []string`: all listed permissions are required.
+- `AnyRequiredPerms []string`: at least one listed permission is required.
 - `Handler echo.HandlerFunc`: the request handler function.
 
 `Handler` is required. If it is nil, the route returns a `500` with `route handler is not configured`.
@@ -70,6 +72,7 @@ For every route, middleware is applied in this order:
 
 - `BeforeMiddlewares`
 - route security middleware
+- permission middleware
 - `Middlewares`
 
 Security middleware is selected from the route type:
@@ -79,6 +82,49 @@ Security middleware is selected from the route type:
 - `TenantHandler`: `securityMiddleware.Tenant`.
 
 Use `BeforeMiddlewares` only when something must run before authentication or tenant resolution. Use `Middlewares` for route-specific behavior that should run after security.
+
+## Route Permissions
+
+Protected routes can require permissions directly on the route struct.
+
+Use `RequiredPerms` when the authenticated user must have every listed permission:
+
+```go
+return &httpapi.TenantHandler{
+	Method:        http.MethodPost,
+	Path:          "/api/v1/users",
+	RequiredPerms: []string{"users.create"},
+	Handler: func(c echo.Context) error {
+		// Handler logic.
+		return answer.Created(c)
+	},
+}
+```
+
+Use `AnyRequiredPerms` when the authenticated user can have any one of the listed permissions:
+
+```go
+return &httpapi.TenantHandler{
+	Method:           http.MethodGet,
+	Path:             "/api/v1/reports",
+	AnyRequiredPerms: []string{"reports.read", "reports.admin"},
+	Handler: func(c echo.Context) error {
+		// Handler logic.
+		return answer.Ok(c, nil)
+	},
+}
+```
+
+Rules:
+
+- Permission checks are applied only to non-public routes.
+- `SystemHandler` and `TenantHandler` can use `RequiredPerms` and `AnyRequiredPerms`.
+- `PublicHandler` exposes the same fields but permission checks are intentionally skipped for public routes.
+- If both `RequiredPerms` and `AnyRequiredPerms` are set, both checks run: all `RequiredPerms` must pass and at least one `AnyRequiredPerms` must pass.
+- Permission middleware runs after security middleware, so `auth.Username(ctx)` and `auth.Tenant(ctx)` must already be available.
+- Permission codes must exist in the permission catalog synchronized by the `permissions` skill.
+
+Use stable dot-separated permission codes, for example `users.read`, `users.create`, or `roles.permissions.replace`.
 
 ## Registration With Fx
 
@@ -108,8 +154,9 @@ Example:
 ```go
 func CreateProductHandler(usecase *usecases.ProductUsecase) httpapi.Route {
 	return &httpapi.TenantHandler{
-		Method: http.MethodPost,
-		Path:   "/api/v1/products",
+		Method:        http.MethodPost,
+		Path:          "/api/v1/products",
+		RequiredPerms: []string{"products.create"},
 		Handler: func(c echo.Context) error {
 			ctx := c.Request().Context()
 
@@ -181,8 +228,9 @@ Use `TenantHandler` for tenant-scoped API endpoints.
 ```go
 func ListProductsHandler(usecase *usecases.ProductUsecase) httpapi.Route {
 	return &httpapi.TenantHandler{
-		Method: http.MethodGet,
-		Path:   "/api/v1/products",
+		Method:        http.MethodGet,
+		Path:          "/api/v1/products",
+		RequiredPerms: []string{"products.read"},
 		Handler: func(c echo.Context) error {
 			products, err := usecase.List(c.Request().Context())
 			if err != nil {
@@ -205,6 +253,8 @@ func ListProductsHandler(usecase *usecases.ProductUsecase) httpapi.Route {
 - Register every route constructor with `httpapi.AsRoute` in the Fx module that owns it.
 - Keep business logic in use cases, not in handlers.
 - Use `binds`, `kcheck`, `errs`, and `answer` for the standard request flow.
+- Add `RequiredPerms` or `AnyRequiredPerms` to protected routes that need authorization beyond authentication.
+- Keep route permission codes aligned with the CSV catalog managed by the `permissions` skill.
 
 ## Common Mistakes
 
@@ -212,4 +262,7 @@ func ListProductsHandler(usecase *usecases.ProductUsecase) httpapi.Route {
 - Do not leave `Handler` nil.
 - Do not use unsupported methods such as `OPTIONS` unless `NewServer` is extended first.
 - Do not use `PublicHandler` for tenant or system-protected endpoints.
+- Do not set permissions on `PublicHandler` and expect them to run.
+- Do not use `RequiredPerms` when any one permission is enough; use `AnyRequiredPerms`.
+- Do not define route permissions without adding the codes to the synchronized permission catalog.
 - Do not put route-specific middleware in global Echo setup unless it truly applies globally.
