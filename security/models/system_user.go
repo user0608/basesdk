@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type SystemUser struct {
+type SystemAccount struct {
 	Username     string `gorm:"primaryKey"`
 	PasswordHash string
 	Disabled     bool
@@ -19,7 +19,7 @@ type SystemUser struct {
 	UpdatedAt    *time.Time
 }
 
-func (u *SystemUser) ValidatePassword(plain string) error {
+func (u *SystemAccount) ValidatePassword(plain string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(plain))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
@@ -30,7 +30,7 @@ func (u *SystemUser) ValidatePassword(plain string) error {
 	return nil
 }
 
-func (u *SystemUser) ChangePassword(plain string) error {
+func (u *SystemAccount) ChangePassword(plain string) error {
 	if plain == "" {
 		return errs.BadRequestDirect("la contraseña no puede estar vacía")
 	}

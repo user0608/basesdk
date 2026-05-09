@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type SystemUserDTO struct {
+type SystemAccountDTO struct {
 	Username  string     `json:"username"`
 	Disabled  bool       `json:"disabled"`
 	CreatedBy string     `json:"created_by"`
@@ -14,12 +14,12 @@ type SystemUserDTO struct {
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
-func NewSystemUserDTO(user *models.SystemUser) *SystemUserDTO {
+func NewSystemUserDTO(user *models.SystemAccount) *SystemAccountDTO {
 	if user == nil {
 		return nil
 	}
 
-	return &SystemUserDTO{
+	return &SystemAccountDTO{
 		Username:  user.Username,
 		Disabled:  user.Disabled,
 		CreatedBy: user.CreatedBy,
@@ -29,8 +29,8 @@ func NewSystemUserDTO(user *models.SystemUser) *SystemUserDTO {
 	}
 }
 
-func NewSystemUserDTOs(users []models.SystemUser) []SystemUserDTO {
-	result := make([]SystemUserDTO, 0, len(users))
+func NewSystemUserDTOs(users []models.SystemAccount) []SystemAccountDTO {
+	result := make([]SystemAccountDTO, 0, len(users))
 
 	for i := range users {
 		dto := NewSystemUserDTO(&users[i])

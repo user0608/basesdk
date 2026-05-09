@@ -5,9 +5,10 @@ import (
 
 	"basesdk/errs"
 
+	"basesdk/types"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/user0608/goones/types"
 )
 
 func RequestUUIDs(c echo.Context) ([]uuid.UUID, error) {
