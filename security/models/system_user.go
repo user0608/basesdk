@@ -19,6 +19,10 @@ type SystemAccount struct {
 	UpdatedAt    *time.Time
 }
 
+func (*SystemAccount) TableName() string {
+	return "system_account"
+}
+
 func (u *SystemAccount) ValidatePassword(plain string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(plain))
 	if err != nil {

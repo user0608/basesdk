@@ -1,25 +1,14 @@
-package security
+package auth
 
 import (
-	"basesdk/security/jwt"
+	"basesdk/auth/jwt"
 	"context"
 	"strings"
-	"time"
 
 	"basesdk/errs"
 
 	"github.com/labstack/echo/v4"
 	"github.com/user0608/goones/answer"
-)
-
-type securityContextKey string
-
-const (
-	contextUsernameKey securityContextKey = "security.username"
-	contextTenantKey   securityContextKey = "security.tenant"
-	contextTimeZoneKey securityContextKey = "security.time_zone"
-
-	undefinedSecurityContextValue = "__security_context_undefined__"
 )
 
 type SecurityMiddleware struct {
@@ -68,7 +57,7 @@ func (s *SecurityMiddleware) Tenant(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		ctx := c.Request().Context()
-		ctx = context.WithValue(ctx, contextUsernameKey, claims.Audience)
+		ctx = context.WithValue(ctx, contextUsernameKey, claims.Subject)
 		ctx = context.WithValue(ctx, contextTenantKey, claims.Tenant)
 		ctx = context.WithValue(ctx, contextTimeZoneKey, claims.TimeZone)
 
@@ -95,43 +84,11 @@ func (s *SecurityMiddleware) System(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		ctx := c.Request().Context()
-		ctx = context.WithValue(ctx, contextUsernameKey, claims.Audience)
+		ctx = context.WithValue(ctx, contextUsernameKey, claims.Subject)
 		ctx = context.WithValue(ctx, contextTimeZoneKey, claims.TimeZone)
 
 		c.SetRequest(c.Request().WithContext(ctx))
 
 		return next(c)
 	}
-}
-
-func Username(ctx context.Context) string {
-	username, ok := ctx.Value(contextUsernameKey).(string)
-	if !ok || username == "" {
-		return undefinedSecurityContextValue
-	}
-
-	return username
-}
-
-func Tenant(ctx context.Context) string {
-	tenant, ok := ctx.Value(contextTenantKey).(string)
-	if !ok || tenant == "" {
-		return undefinedSecurityContextValue
-	}
-
-	return tenant
-}
-
-func Tz(ctx context.Context) (*time.Location, error) {
-	timeZone, ok := ctx.Value(contextTimeZoneKey).(string)
-	if !ok || strings.TrimSpace(timeZone) == "" {
-		return nil, errs.BadRequestDirect("falta la zona horaria")
-	}
-
-	location, err := time.LoadLocation(timeZone)
-	if err != nil {
-		return nil, errs.BadRequestDirect("zona horaria inválida")
-	}
-
-	return location, nil
 }

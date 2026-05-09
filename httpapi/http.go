@@ -1,8 +1,8 @@
 package httpapi
 
 import (
+	"basesdk/auth"
 	"basesdk/configs"
-	"basesdk/security"
 	"context"
 	"log/slog"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func buildMiddlewares(route Route, securityMiddleware *security.SecurityMiddleware) []echo.MiddlewareFunc {
+func buildMiddlewares(route Route, securityMiddleware *auth.SecurityMiddleware) []echo.MiddlewareFunc {
 	var before []echo.MiddlewareFunc
 	var after []echo.MiddlewareFunc
 
@@ -52,7 +52,7 @@ func buildMiddlewares(route Route, securityMiddleware *security.SecurityMiddlewa
 	return middlewares
 }
 
-func NewServer(routes []Route, securityMiddleware *security.SecurityMiddleware) *echo.Echo {
+func NewServer(routes []Route, securityMiddleware *auth.SecurityMiddleware) *echo.Echo {
 	server := echo.New()
 	server.HideBanner = true
 	server.Use(middleware.RequestLogger())
@@ -82,7 +82,7 @@ func NewServer(routes []Route, securityMiddleware *security.SecurityMiddleware) 
 
 var Module = fx.Module("http-server",
 	fx.Provide(
-		security.NewSecurityMiddleware,
+		auth.NewSecurityMiddleware,
 		fx.Annotate(
 			NewServer,
 			fx.ParamTags(

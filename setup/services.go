@@ -2,12 +2,12 @@ package setup
 
 import (
 	"basesdk"
+	"basesdk/auth/jwt"
 	"basesdk/configs"
 	"basesdk/connection"
 	"basesdk/httpapi"
 	"basesdk/properties"
 	"basesdk/security/handlers"
-	"basesdk/security/jwt"
 	"basesdk/security/repositories"
 	"basesdk/security/usecases"
 	"basesdk/setup/migrations"
@@ -76,10 +76,12 @@ func (s *Service) applicationOptions() []fx.Option {
 		fx.Module("security",
 			fx.Provide(
 				repositories.NewSystemUserRepository,
+				repositories.NewAppUserRepository,
 				jwt.NewKeyStore,
 				jwt.NewTokenService,
 				usecases.NewSecurityUsecase,
 				httpapi.AsRoute(handlers.SystemUserHandler),
+				httpapi.AsRoute(handlers.TenantUserHandler),
 			),
 		),
 		httpapi.Module,
