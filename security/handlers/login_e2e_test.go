@@ -1,7 +1,6 @@
 package handlers_test
 
 import (
-	"basesdk/auth"
 	"basesdk/auth/jwt"
 	"basesdk/configs"
 	"basesdk/connection"
@@ -105,14 +104,13 @@ func newLoginTestServer(t *testing.T) (*httptest.Server, *jwt.TokenService) {
 
 	storage := testdb.NewPostgresStorage(t)
 	usecase, tokenService := newSecurityUsecase(t, storage)
-	securityMiddleware := auth.NewSecurityMiddleware(tokenService)
 
 	server := httpapi.NewServer(
 		[]httpapi.Route{
 			handlers.SystemUserHandler(usecase),
 			handlers.TenantUserHandler(usecase),
 		},
-		securityMiddleware,
+		nil,
 	)
 
 	testServer := httptest.NewServer(server)

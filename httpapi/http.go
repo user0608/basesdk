@@ -12,7 +12,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func buildMiddlewares(route Route, securityMiddleware *auth.SecurityMiddleware) []echo.MiddlewareFunc {
+func buildMiddlewares(route Route, securityMiddleware auth.SecurityMiddleware) []echo.MiddlewareFunc {
 	var before []echo.MiddlewareFunc
 	var after []echo.MiddlewareFunc
 
@@ -52,7 +52,7 @@ func buildMiddlewares(route Route, securityMiddleware *auth.SecurityMiddleware) 
 	return middlewares
 }
 
-func NewServer(routes []Route, securityMiddleware *auth.SecurityMiddleware) *echo.Echo {
+func NewServer(routes []Route, securityMiddleware auth.SecurityMiddleware) *echo.Echo {
 	server := echo.New()
 	server.HideBanner = true
 	server.Use(middleware.RequestLogger())

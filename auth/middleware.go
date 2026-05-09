@@ -11,17 +11,24 @@ import (
 	"github.com/user0608/goones/answer"
 )
 
-type SecurityMiddleware struct {
+type SecurityMiddleware interface {
+	Tenant(next echo.HandlerFunc) echo.HandlerFunc
+	System(next echo.HandlerFunc) echo.HandlerFunc
+}
+
+type jwtSecurityMiddleware struct {
 	tokenService *jwt.TokenService
 }
 
-func NewSecurityMiddleware(tokenService *jwt.TokenService) *SecurityMiddleware {
-	return &SecurityMiddleware{
+var _ SecurityMiddleware = (*jwtSecurityMiddleware)(nil)
+
+func NewSecurityMiddleware(tokenService *jwt.TokenService) SecurityMiddleware {
+	return &jwtSecurityMiddleware{
 		tokenService: tokenService,
 	}
 }
 
-func (s *SecurityMiddleware) readJWTToken(c echo.Context) (string, error) {
+func (s *jwtSecurityMiddleware) readJWTToken(c echo.Context) (string, error) {
 	authorization := strings.TrimSpace(c.Request().Header.Get("Authorization"))
 	if authorization == "" {
 		return "", errs.UnauthorizedDirect("no se encontró el token de autorización en la petición")
@@ -40,7 +47,7 @@ func (s *SecurityMiddleware) readJWTToken(c echo.Context) (string, error) {
 	return token, nil
 }
 
-func (s *SecurityMiddleware) Tenant(next echo.HandlerFunc) echo.HandlerFunc {
+func (s *jwtSecurityMiddleware) Tenant(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		token, err := s.readJWTToken(c)
 		if err != nil {
@@ -67,7 +74,7 @@ func (s *SecurityMiddleware) Tenant(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (s *SecurityMiddleware) System(next echo.HandlerFunc) echo.HandlerFunc {
+func (s *jwtSecurityMiddleware) System(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		token, err := s.readJWTToken(c)
 		if err != nil {
@@ -86,6 +93,51 @@ func (s *SecurityMiddleware) System(next echo.HandlerFunc) echo.HandlerFunc {
 		ctx := c.Request().Context()
 		ctx = context.WithValue(ctx, contextUsernameKey, claims.Subject)
 		ctx = context.WithValue(ctx, contextTimeZoneKey, claims.TimeZone)
+
+		c.SetRequest(c.Request().WithContext(ctx))
+
+		return next(c)
+	}
+}
+
+type authenticatedSecurityMiddleware struct {
+	username string
+	tenant   string
+	timeZone string
+}
+
+var _ SecurityMiddleware = (*authenticatedSecurityMiddleware)(nil)
+
+func NewAuthenticatedSecurityMiddleware(username string, tenant string, timeZone string) SecurityMiddleware {
+	return &authenticatedSecurityMiddleware{
+		username: username,
+		tenant:   tenant,
+		timeZone: timeZone,
+	}
+}
+
+func NewDefaultAuthenticatedSecurityMiddleware() SecurityMiddleware {
+	return NewAuthenticatedSecurityMiddleware("kevin", "local", "America/Lima")
+}
+
+func (s *authenticatedSecurityMiddleware) Tenant(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx := c.Request().Context()
+		ctx = context.WithValue(ctx, contextUsernameKey, s.username)
+		ctx = context.WithValue(ctx, contextTenantKey, s.tenant)
+		ctx = context.WithValue(ctx, contextTimeZoneKey, s.timeZone)
+
+		c.SetRequest(c.Request().WithContext(ctx))
+
+		return next(c)
+	}
+}
+
+func (s *authenticatedSecurityMiddleware) System(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx := c.Request().Context()
+		ctx = context.WithValue(ctx, contextUsernameKey, s.username)
+		ctx = context.WithValue(ctx, contextTimeZoneKey, s.timeZone)
 
 		c.SetRequest(c.Request().WithContext(ctx))
 
