@@ -144,6 +144,7 @@ func newUserManagementTestServer(t *testing.T) *httptest.Server {
 			handlers.TenantPermissionFindHandler(permissionsUsecase),
 		},
 		auth.NewTestSecurityMiddleware(),
+		nil,
 	)
 
 	testServer := httptest.NewServer(server)

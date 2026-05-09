@@ -2,6 +2,7 @@ package setup
 
 import (
 	"basesdk"
+	"basesdk/auth"
 	"basesdk/auth/jwt"
 	"basesdk/configs"
 	"basesdk/connection"
@@ -93,6 +94,10 @@ func (s *Service) applicationOptions() []fx.Option {
 				repositories.NewRoleRepository,
 				repositories.NewGroupRepository,
 				repositories.NewPermissionRepository,
+				fx.Annotate(
+					usecases.NewAuthorizationUsecase,
+					fx.As(new(auth.PermissionValidator)),
+				),
 				jwt.NewKeyStore,
 				jwt.NewTokenService,
 				usecases.NewSecurityUsecase,

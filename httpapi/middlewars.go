@@ -9,3 +9,11 @@ type BeforeSecurityMiddlewareProvider interface {
 type AfterSecurityMiddlewareProvider interface {
 	AfterSecurityMiddlewares() []echo.MiddlewareFunc
 }
+
+type PermissionsProvider interface {
+	Permissions() []string
+}
+
+type AnyPermissionsProvider interface {
+	AnyPermissions() []string
+}

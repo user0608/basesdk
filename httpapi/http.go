@@ -12,7 +12,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func buildMiddlewares(route Route, securityMiddleware auth.SecurityMiddleware) []echo.MiddlewareFunc {
+func buildMiddlewares(route Route, securityMiddleware auth.SecurityMiddleware, permissionMiddleware *auth.PermissionMiddleware) []echo.MiddlewareFunc {
 	var before []echo.MiddlewareFunc
 	var after []echo.MiddlewareFunc
 
@@ -28,6 +28,7 @@ func buildMiddlewares(route Route, securityMiddleware auth.SecurityMiddleware) [
 	_, isSystem := route.(systemRouteMarker)
 
 	var securityMdw []echo.MiddlewareFunc
+	var permissionMdw []echo.MiddlewareFunc
 
 	if isPublic && isSystem {
 		slog.Warn(
@@ -44,22 +45,37 @@ func buildMiddlewares(route Route, securityMiddleware auth.SecurityMiddleware) [
 		securityMdw = []echo.MiddlewareFunc{securityMiddleware.Tenant}
 	}
 
-	middlewares := make([]echo.MiddlewareFunc, 0, len(before)+len(securityMdw)+len(after))
+	if !isPublic && permissionMiddleware != nil {
+		if r, ok := route.(PermissionsProvider); ok {
+			if permissions := r.Permissions(); len(permissions) > 0 {
+				permissionMdw = append(permissionMdw, permissionMiddleware.RequireAll(permissions))
+			}
+		}
+
+		if r, ok := route.(AnyPermissionsProvider); ok {
+			if permissions := r.AnyPermissions(); len(permissions) > 0 {
+				permissionMdw = append(permissionMdw, permissionMiddleware.RequireAny(permissions))
+			}
+		}
+	}
+
+	middlewares := make([]echo.MiddlewareFunc, 0, len(before)+len(securityMdw)+len(permissionMdw)+len(after))
 	middlewares = append(middlewares, before...)
 	middlewares = append(middlewares, securityMdw...)
+	middlewares = append(middlewares, permissionMdw...)
 	middlewares = append(middlewares, after...)
 
 	return middlewares
 }
 
-func NewServer(routes []Route, securityMiddleware auth.SecurityMiddleware) *echo.Echo {
+func NewServer(routes []Route, securityMiddleware auth.SecurityMiddleware, permissionMiddleware *auth.PermissionMiddleware) *echo.Echo {
 	server := echo.New()
 	server.HideBanner = true
 	server.Use(middleware.RequestLogger())
 	server.Use(middleware.Recover())
 
 	for _, route := range routes {
-		routeMiddlewares := buildMiddlewares(route, securityMiddleware)
+		routeMiddlewares := buildMiddlewares(route, securityMiddleware, permissionMiddleware)
 
 		switch route.GetMethod() {
 		case http.MethodGet:
@@ -83,10 +99,13 @@ func NewServer(routes []Route, securityMiddleware auth.SecurityMiddleware) *echo
 var Module = fx.Module("http-server",
 	fx.Provide(
 		auth.NewSecurityMiddleware,
+		auth.NewPermissionMiddleware,
 		fx.Annotate(
 			NewServer,
 			fx.ParamTags(
 				RouteTag,
+				``,
+				``,
 			),
 		),
 	),

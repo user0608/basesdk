@@ -111,6 +111,7 @@ func newLoginTestServer(t *testing.T) (*httptest.Server, *jwt.TokenService) {
 			handlers.TenantUserHandler(usecase),
 		},
 		nil,
+		nil,
 	)
 
 	testServer := httptest.NewServer(server)

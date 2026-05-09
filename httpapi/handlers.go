@@ -11,12 +11,16 @@ type TenantHandler struct {
 	Path              string
 	BeforeMiddlewares []echo.MiddlewareFunc
 	Middlewares       []echo.MiddlewareFunc
+	RequiredPerms     []string
+	AnyRequiredPerms  []string
 	Handler           echo.HandlerFunc
 }
 
 var _ Route = (*TenantHandler)(nil)
 var _ BeforeSecurityMiddlewareProvider = (*TenantHandler)(nil)
 var _ AfterSecurityMiddlewareProvider = (*TenantHandler)(nil)
+var _ PermissionsProvider = (*TenantHandler)(nil)
+var _ AnyPermissionsProvider = (*TenantHandler)(nil)
 
 // GetMethod implements [Route].
 func (h *TenantHandler) GetMethod() string {
@@ -52,6 +56,14 @@ func (h *TenantHandler) AfterSecurityMiddlewares() []echo.MiddlewareFunc {
 	return h.Middlewares
 }
 
+func (h *TenantHandler) Permissions() []string {
+	return h.RequiredPerms
+}
+
+func (h *TenantHandler) AnyPermissions() []string {
+	return h.AnyRequiredPerms
+}
+
 // System
 type SystemHandler struct {
 	SystemRoute
@@ -59,12 +71,16 @@ type SystemHandler struct {
 	Path              string
 	BeforeMiddlewares []echo.MiddlewareFunc
 	Middlewares       []echo.MiddlewareFunc
+	RequiredPerms     []string
+	AnyRequiredPerms  []string
 	Handler           echo.HandlerFunc
 }
 
 var _ Route = (*SystemHandler)(nil)
 var _ BeforeSecurityMiddlewareProvider = (*SystemHandler)(nil)
 var _ AfterSecurityMiddlewareProvider = (*SystemHandler)(nil)
+var _ PermissionsProvider = (*SystemHandler)(nil)
+var _ AnyPermissionsProvider = (*SystemHandler)(nil)
 
 // GetMethod implements [Route].
 func (h *SystemHandler) GetMethod() string {
@@ -100,6 +116,14 @@ func (h *SystemHandler) AfterSecurityMiddlewares() []echo.MiddlewareFunc {
 	return h.Middlewares
 }
 
+func (h *SystemHandler) Permissions() []string {
+	return h.RequiredPerms
+}
+
+func (h *SystemHandler) AnyPermissions() []string {
+	return h.AnyRequiredPerms
+}
+
 // Public
 type PublicHandler struct {
 	PublicRoute
@@ -107,12 +131,16 @@ type PublicHandler struct {
 	Path              string
 	BeforeMiddlewares []echo.MiddlewareFunc
 	Middlewares       []echo.MiddlewareFunc
+	RequiredPerms     []string
+	AnyRequiredPerms  []string
 	Handler           echo.HandlerFunc
 }
 
 var _ Route = (*PublicHandler)(nil)
 var _ BeforeSecurityMiddlewareProvider = (*PublicHandler)(nil)
 var _ AfterSecurityMiddlewareProvider = (*PublicHandler)(nil)
+var _ PermissionsProvider = (*PublicHandler)(nil)
+var _ AnyPermissionsProvider = (*PublicHandler)(nil)
 
 // GetMethod implements [Route].
 func (h *PublicHandler) GetMethod() string {
@@ -146,4 +174,12 @@ func (h *PublicHandler) BeforeSecurityMiddlewares() []echo.MiddlewareFunc {
 // AfterSecurityMiddlewares implements [AfterSecurityMiddlewareProvider].
 func (h *PublicHandler) AfterSecurityMiddlewares() []echo.MiddlewareFunc {
 	return h.Middlewares
+}
+
+func (h *PublicHandler) Permissions() []string {
+	return h.RequiredPerms
+}
+
+func (h *PublicHandler) AnyPermissions() []string {
+	return h.AnyRequiredPerms
 }

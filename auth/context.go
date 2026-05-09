@@ -36,6 +36,10 @@ func Tenant(ctx context.Context) string {
 	return tenant
 }
 
+func IsUndefined(value string) bool {
+	return value == undefinedSecurityContextValue
+}
+
 func Tz(ctx context.Context) (*time.Location, error) {
 	timeZone, ok := ctx.Value(contextTimeZoneKey).(string)
 	if !ok || strings.TrimSpace(timeZone) == "" {
