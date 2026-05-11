@@ -1,3 +1,5 @@
+.PHONY: run upgrade downgrade status sql-scripts new-migrate fmt-sql permissions
+
 run:
 	@TZ=UTC $(shell xenv) go run example/*.go -c example/config.yml
 
@@ -18,3 +20,6 @@ new-migrate:
 
 fmt-sql:
 	@sqruff --config .sqruff fix migrations
+
+permissions:
+	@./scripts/generate-permissions.sh

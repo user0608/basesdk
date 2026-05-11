@@ -10,13 +10,25 @@ Permissions are declared in CSV files and synchronized into the `permission` dat
 
 This is for static permission definitions such as API actions, menu capabilities, or authorization scopes.
 
+The base SDK catalog lives in:
+
+```text
+permissions/security.csv
+```
+
+Go constants are generated from that CSV into:
+
+```text
+security/permissions/permissions.go
+```
+
 ## CSV Format
 
 Each `.csv` row must have exactly two columns:
 
 ```csv
-users.read,Read users
-users.update,Update users
+security.users.read,Consultar usuarios
+security.users.update,Actualizar usuarios
 ```
 
 Column meaning:
@@ -49,6 +61,8 @@ Duplicate error messages include both conflicting descriptions, so keep descript
 
 ## Registering Permission Sources
 
+The SDK registers its embedded base permission catalog by default through `basesdk.PermissionsFS`.
+
 Applications should embed permission files and pass the embedded `fs.FS` through `setup.WithPermissions`.
 
 ```go
@@ -69,6 +83,7 @@ service := setup.NewService(
 The setup service provides permission sources to Fx with:
 
 ```go
+setuppermissions.ProvideFSSources(basesdk.PermissionsFS)
 setuppermissions.ProvideFSSources(s.permissions...)
 ```
 
@@ -99,6 +114,31 @@ set description = excluded.description
 
 Existing permissions with the same code have their description updated.
 
+## Generated Constants
+
+After editing permission CSV files, regenerate Go constants:
+
+```bash
+./scripts/generate-permissions.sh
+```
+
+The script runs `cmd/permissiongen` and writes `security/permissions/permissions.go`.
+
+Handlers should use generated constants instead of string literals:
+
+```go
+import securitypermissions "basesdk/security/permissions"
+
+return &httpapi.TenantHandler{
+	Method:        http.MethodPost,
+	Path:          "/api/v1/users",
+	RequiredPerms: []string{securitypermissions.SecurityUsersCreate},
+	Handler:       handler,
+}
+```
+
+This keeps route authorization tied to the CSV catalog. If a permission code is removed or renamed and constants are regenerated, stale handler references fail at compile time.
+
 ## Data Model
 
 The in-memory definition is:
@@ -118,21 +158,25 @@ Use stable, descriptive, dot-separated codes.
 
 Examples:
 
-- `users.read`
-- `users.create`
-- `users.update`
-- `users.delete`
-- `roles.permissions.replace`
-- `groups.users.replace`
+- `security.users.read`
+- `security.users.create`
+- `security.users.update`
+- `security.users.delete`
+- `security.roles.permissions.replace`
+- `security.groups.users.replace`
 
 Prefer action names that match behavior rather than HTTP methods.
+
+For SDK-owned permissions, keep the module prefix such as `security.` so codes are clear when multiple modules define their own catalogs.
 
 ## When Adding Permissions
 
 1. Add the permission row to an embedded `.csv` file.
 2. Keep codes unique across SDK and application permission sources.
-3. Register the embedded FS with `setup.WithPermissions` if it is application-owned.
-4. Ensure authorization checks use the same exact code string.
+3. Run `./scripts/generate-permissions.sh` when editing SDK-owned CSV files.
+4. Register the embedded FS with `setup.WithPermissions` if it is application-owned.
+5. Use generated constants in handlers instead of raw strings.
+6. Ensure authorization checks use the same exact code string.
 
 ## Common Mistakes
 
@@ -142,4 +186,6 @@ Prefer action names that match behavior rather than HTTP methods.
 - Do not duplicate codes across multiple CSV files or embedded sources.
 - Do not expect deleted CSV rows to delete database permissions; synchronization only inserts or updates.
 - Do not put runtime or tenant-specific grants here; this catalog defines available permissions, not user assignments.
+- Do not hardcode route permission strings when a generated constant exists.
+- Do not forget to regenerate constants after changing SDK permission CSV files.
 - Do not ignore startup sync errors; they indicate the permission catalog is invalid or the database upsert failed.

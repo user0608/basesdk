@@ -2,12 +2,11 @@ package usecases
 
 import (
 	"basesdk/security/models"
+	securitypermissions "basesdk/security/permissions"
 	"basesdk/security/repositories"
 	"context"
 	"strings"
 )
-
-const adminPermission = "admin"
 
 type AuthorizationUsecase struct {
 	permissionRepository *repositories.PermissionRepository
@@ -22,7 +21,7 @@ func (u *AuthorizationUsecase) HasAllPermissions(ctx context.Context, tenantCodi
 	if err != nil {
 		return false, err
 	}
-	if _, ok := permissionSet[adminPermission]; ok {
+	if _, ok := permissionSet[securitypermissions.SecurityAdmin]; ok {
 		return true, nil
 	}
 
@@ -45,7 +44,7 @@ func (u *AuthorizationUsecase) HasAnyPermission(ctx context.Context, tenantCodig
 	if err != nil {
 		return false, err
 	}
-	if _, ok := permissionSet[adminPermission]; ok {
+	if _, ok := permissionSet[securitypermissions.SecurityAdmin]; ok {
 		return true, nil
 	}
 

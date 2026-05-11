@@ -158,7 +158,7 @@ func seedTestPermission(t *testing.T, storage connection.StorageManager) {
 
 	err := storage.Conn(context.Background()).Exec(`
 		insert into permission (code, description)
-		values ('users.read', 'Read users')
+		values ('security.users.read', 'Consultar usuarios')
 	`).Error
 	require.NoError(t, err)
 }

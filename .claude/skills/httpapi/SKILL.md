@@ -93,7 +93,7 @@ Use `RequiredPerms` when the authenticated user must have every listed permissio
 return &httpapi.TenantHandler{
 	Method:        http.MethodPost,
 	Path:          "/api/v1/users",
-	RequiredPerms: []string{"users.create"},
+	RequiredPerms: []string{"security.users.create"},
 	Handler: func(c echo.Context) error {
 		// Handler logic.
 		return answer.Created(c)
@@ -124,7 +124,17 @@ Rules:
 - Permission middleware runs after security middleware, so `auth.Username(ctx)` and `auth.Tenant(ctx)` must already be available.
 - Permission codes must exist in the permission catalog synchronized by the `permissions` skill.
 
-Use stable dot-separated permission codes, for example `users.read`, `users.create`, or `roles.permissions.replace`.
+Use stable dot-separated permission codes with a module prefix, for example `security.users.read`, `security.users.create`, or `security.roles.permissions.replace`.
+
+For SDK routes, use generated constants from `basesdk/security/permissions` instead of string literals:
+
+```go
+import securitypermissions "basesdk/security/permissions"
+
+RequiredPerms: []string{securitypermissions.SecurityUsersRead},
+```
+
+After changing the SDK permission CSV catalog, run `./scripts/generate-permissions.sh`.
 
 ## Registration With Fx
 
@@ -255,6 +265,7 @@ func ListProductsHandler(usecase *usecases.ProductUsecase) httpapi.Route {
 - Use `binds`, `kcheck`, `errs`, and `answer` for the standard request flow.
 - Add `RequiredPerms` or `AnyRequiredPerms` to protected routes that need authorization beyond authentication.
 - Keep route permission codes aligned with the CSV catalog managed by the `permissions` skill.
+- Use generated permission constants for SDK-owned handlers.
 
 ## Common Mistakes
 
@@ -265,4 +276,5 @@ func ListProductsHandler(usecase *usecases.ProductUsecase) httpapi.Route {
 - Do not set permissions on `PublicHandler` and expect them to run.
 - Do not use `RequiredPerms` when any one permission is enough; use `AnyRequiredPerms`.
 - Do not define route permissions without adding the codes to the synchronized permission catalog.
+- Do not hardcode SDK route permission strings when generated constants are available.
 - Do not put route-specific middleware in global Echo setup unless it truly applies globally.

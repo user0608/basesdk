@@ -134,7 +134,7 @@ create table permission
 );
 
 comment on table permission is 'Global permission catalog used by roles.';
-comment on column permission.code is 'Permission code, for example users.create, users.read, roles.update.';
+comment on column permission.code is 'Permission code, for example security.users.create, security.users.read, security.roles.update.';
 
 create table user_role
 (
@@ -316,7 +316,7 @@ insert into permission
 )
 values
 (
-    'admin',
+    'security.admin',
     'Administrator permission.'
 );
 
@@ -349,7 +349,7 @@ values
 (
     'tenant_default',
     'SUPER_ADMIN',
-    'admin',
+    'security.admin',
     'kevin',
     now()
 );

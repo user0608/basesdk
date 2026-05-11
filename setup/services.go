@@ -62,6 +62,7 @@ func (s *Service) baseOptions() []fx.Option {
 		fx.Provide(
 			migrations.ProvideFSSources(basesdk.MigrationsFS),
 			migrations.ProvideFSSources(s.migrations...),
+			setuppermissions.ProvideFSSources(basesdk.PermissionsFS),
 			setuppermissions.ProvideFSSources(s.permissions...),
 			fx.Annotate(
 				migrations.NewMigrationRunner,

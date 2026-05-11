@@ -42,7 +42,7 @@ func TestNewServerAppliesRequiredPermissions(t *testing.T) {
 			&httpapi.TenantHandler{
 				Method:        http.MethodGet,
 				Path:          "/users",
-				RequiredPerms: []string{"users.read", "users.create"},
+				RequiredPerms: []string{"security.users.read", "security.users.create"},
 				Handler: func(c echo.Context) error {
 					return c.NoContent(http.StatusNoContent)
 				},
@@ -50,7 +50,7 @@ func TestNewServerAppliesRequiredPermissions(t *testing.T) {
 		},
 		auth.NewTestSecurityMiddleware(),
 		auth.NewPermissionMiddleware(&permissionValidatorStub{permissions: map[string]bool{
-			"users.read": true,
+			"security.users.read": true,
 		}}),
 	)
 
@@ -68,7 +68,7 @@ func TestNewServerAppliesAnyRequiredPermissions(t *testing.T) {
 			&httpapi.TenantHandler{
 				Method:           http.MethodGet,
 				Path:             "/users",
-				AnyRequiredPerms: []string{"users.create", "users.read"},
+				AnyRequiredPerms: []string{"security.users.create", "security.users.read"},
 				Handler: func(c echo.Context) error {
 					return c.NoContent(http.StatusNoContent)
 				},
@@ -76,7 +76,7 @@ func TestNewServerAppliesAnyRequiredPermissions(t *testing.T) {
 		},
 		auth.NewTestSecurityMiddleware(),
 		auth.NewPermissionMiddleware(&permissionValidatorStub{permissions: map[string]bool{
-			"users.read": true,
+			"security.users.read": true,
 		}}),
 	)
 

@@ -4,6 +4,7 @@ import (
 	"basesdk/binds"
 	"basesdk/httpapi"
 	"basesdk/security/dtos"
+	securitypermissions "basesdk/security/permissions"
 	"basesdk/security/usecases"
 	"net/http"
 
@@ -12,31 +13,27 @@ import (
 	"github.com/user0608/goones/kcheck"
 )
 
-func tenantRolesRoute(path string, method string, system bool, usecase *usecases.TenantRolesUsecase, action string) httpapi.Route {
-	handler := func(c echo.Context) error {
-		tenantCodigo := tenant(c)
-		if system {
-			var err error
-			tenantCodigo, err = tenantParam(c)
-			if err != nil {
-				return answer.Err(c, err)
-			}
-		}
-		ctx := c.Request().Context()
-		switch action {
-		case "list":
-			response, err := usecase.List(ctx, tenantCodigo)
+func TenantRolesListHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodGet,
+		Path:          "/api/v1/roles",
+		RequiredPerms: []string{securitypermissions.SecurityRolesRead},
+		Handler: func(c echo.Context) error {
+			response, err := usecase.List(c.Request().Context(), tenant(c))
 			if err != nil {
 				return answer.Err(c, err)
 			}
 			return answer.Ok(c, response)
-		case "find":
-			response, err := usecase.Find(ctx, tenantCodigo, c.Param("code"))
-			if err != nil {
-				return answer.Err(c, err)
-			}
-			return answer.Ok(c, response)
-		case "create":
+		},
+	}
+}
+
+func TenantRoleCreateHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPost,
+		Path:          "/api/v1/roles",
+		RequiredPerms: []string{securitypermissions.SecurityRolesCreate},
+		Handler: func(c echo.Context) error {
 			var payload dtos.CreateRoleInput
 			if err := binds.JSON(c, &payload); err != nil {
 				return answer.Err(c, err)
@@ -44,113 +41,313 @@ func tenantRolesRoute(path string, method string, system bool, usecase *usecases
 			if err := kcheck.Valid(payload); err != nil {
 				return answer.Err(c, err)
 			}
-			if err := usecase.Create(ctx, tenantCodigo, payload, actor(c)); err != nil {
+			if err := usecase.Create(c.Request().Context(), tenant(c), payload, actor(c)); err != nil {
 				return answer.Err(c, err)
 			}
 			return answer.Created(c)
-		case "update":
-			var payload dtos.UpdateRoleInput
-			if err := binds.JSON(c, &payload); err != nil {
-				return answer.Err(c, err)
-			}
-			if err := usecase.Update(ctx, tenantCodigo, c.Param("code"), payload, actor(c)); err != nil {
-				return answer.Err(c, err)
-			}
-			return answer.Success(c)
-		case "enable", "disable", "delete":
-			values, err := requestStrings(c)
-			if err != nil {
-				return answer.Err(c, err)
-			}
-			if action == "enable" {
-				err = usecase.Enable(ctx, tenantCodigo, values, actor(c))
-			}
-			if action == "disable" {
-				err = usecase.Disable(ctx, tenantCodigo, values, actor(c))
-			}
-			if action == "delete" {
-				err = usecase.Delete(ctx, tenantCodigo, values)
-			}
-			if err != nil {
-				return answer.Err(c, err)
-			}
-			return answer.Success(c)
-		case "permissions":
-			response, err := usecase.FindPermissions(ctx, tenantCodigo, c.Param("code"))
+		},
+	}
+}
+
+func TenantRoleFindHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodGet,
+		Path:          "/api/v1/roles/:code",
+		RequiredPerms: []string{securitypermissions.SecurityRolesRead},
+		Handler: func(c echo.Context) error {
+			response, err := usecase.Find(c.Request().Context(), tenant(c), c.Param("code"))
 			if err != nil {
 				return answer.Err(c, err)
 			}
 			return answer.Ok(c, response)
-		case "replace-permissions":
+		},
+	}
+}
+
+func TenantRoleUpdateHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPut,
+		Path:          "/api/v1/roles/:code",
+		RequiredPerms: []string{securitypermissions.SecurityRolesUpdate},
+		Handler: func(c echo.Context) error {
+			var payload dtos.UpdateRoleInput
+			if err := binds.JSON(c, &payload); err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Update(c.Request().Context(), tenant(c), c.Param("code"), payload, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
+}
+
+func TenantRolesEnableHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPatch,
+		Path:          "/api/v1/roles/enable",
+		RequiredPerms: []string{securitypermissions.SecurityRolesEnable},
+		Handler: func(c echo.Context) error {
 			values, err := requestStrings(c)
 			if err != nil {
 				return answer.Err(c, err)
 			}
-			if err := usecase.ReplacePermissions(ctx, tenantCodigo, c.Param("code"), values, actor(c)); err != nil {
+			if err := usecase.Enable(c.Request().Context(), tenant(c), values, actor(c)); err != nil {
 				return answer.Err(c, err)
 			}
 			return answer.Success(c)
-		}
-		return answer.Success(c)
+		},
 	}
-	if system {
-		return &httpapi.SystemHandler{Method: method, Path: path, Handler: handler}
-	}
-	return &httpapi.TenantHandler{Method: method, Path: path, Handler: handler}
 }
 
-func TenantRolesListHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles", http.MethodGet, false, usecase, "list")
-}
-func TenantRoleCreateHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles", http.MethodPost, false, usecase, "create")
-}
-func TenantRoleFindHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles/:code", http.MethodGet, false, usecase, "find")
-}
-func TenantRoleUpdateHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles/:code", http.MethodPut, false, usecase, "update")
-}
-func TenantRolesEnableHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles/enable", http.MethodPatch, false, usecase, "enable")
-}
 func TenantRolesDisableHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles/disable", http.MethodPatch, false, usecase, "disable")
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPatch,
+		Path:          "/api/v1/roles/disable",
+		RequiredPerms: []string{securitypermissions.SecurityRolesDisable},
+		Handler: func(c echo.Context) error {
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Disable(c.Request().Context(), tenant(c), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
+
 func TenantRolesDeleteHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles", http.MethodDelete, false, usecase, "delete")
+	return &httpapi.TenantHandler{
+		Method:        http.MethodDelete,
+		Path:          "/api/v1/roles",
+		RequiredPerms: []string{securitypermissions.SecurityRolesDelete},
+		Handler: func(c echo.Context) error {
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Delete(c.Request().Context(), tenant(c), values); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
+
 func TenantRolePermissionsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles/:code/permissions", http.MethodGet, false, usecase, "permissions")
+	return &httpapi.TenantHandler{
+		Method:        http.MethodGet,
+		Path:          "/api/v1/roles/:code/permissions",
+		RequiredPerms: []string{securitypermissions.SecurityRolesPermissionsRead},
+		Handler: func(c echo.Context) error {
+			response, err := usecase.FindPermissions(c.Request().Context(), tenant(c), c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
 }
+
 func TenantRoleReplacePermissionsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/roles/:code/permissions", http.MethodPut, false, usecase, "replace-permissions")
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPut,
+		Path:          "/api/v1/roles/:code/permissions",
+		RequiredPerms: []string{securitypermissions.SecurityRolesPermissionsReplace},
+		Handler: func(c echo.Context) error {
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.ReplacePermissions(c.Request().Context(), tenant(c), c.Param("code"), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
 
 func SystemTenantRolesListHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles", http.MethodGet, true, usecase, "list")
+	return &httpapi.SystemHandler{
+		Method: http.MethodGet,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			response, err := usecase.List(c.Request().Context(), tenantCodigo)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
 }
+
 func SystemTenantRoleCreateHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles", http.MethodPost, true, usecase, "create")
+	return &httpapi.SystemHandler{
+		Method: http.MethodPost,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			var payload dtos.CreateRoleInput
+			if err := binds.JSON(c, &payload); err != nil {
+				return answer.Err(c, err)
+			}
+			if err := kcheck.Valid(payload); err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Create(c.Request().Context(), tenantCodigo, payload, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Created(c)
+		},
+	}
 }
+
 func SystemTenantRoleFindHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles/:code", http.MethodGet, true, usecase, "find")
+	return &httpapi.SystemHandler{
+		Method: http.MethodGet,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			response, err := usecase.Find(c.Request().Context(), tenantCodigo, c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
 }
+
 func SystemTenantRoleUpdateHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles/:code", http.MethodPut, true, usecase, "update")
+	return &httpapi.SystemHandler{
+		Method: http.MethodPut,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			var payload dtos.UpdateRoleInput
+			if err := binds.JSON(c, &payload); err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Update(c.Request().Context(), tenantCodigo, c.Param("code"), payload, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
+
 func SystemTenantRolesEnableHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles/enable", http.MethodPatch, true, usecase, "enable")
+	return &httpapi.SystemHandler{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/enable",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Enable(c.Request().Context(), tenantCodigo, values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
+
 func SystemTenantRolesDisableHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles/disable", http.MethodPatch, true, usecase, "disable")
+	return &httpapi.SystemHandler{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/disable",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Disable(c.Request().Context(), tenantCodigo, values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
+
 func SystemTenantRolesDeleteHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles", http.MethodDelete, true, usecase, "delete")
+	return &httpapi.SystemHandler{
+		Method: http.MethodDelete,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.Delete(c.Request().Context(), tenantCodigo, values); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }
+
 func SystemTenantRolePermissionsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles/:code/permissions", http.MethodGet, true, usecase, "permissions")
+	return &httpapi.SystemHandler{
+		Method: http.MethodGet,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code/permissions",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			response, err := usecase.FindPermissions(c.Request().Context(), tenantCodigo, c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
 }
+
 func SystemTenantRoleReplacePermissionsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
-	return tenantRolesRoute("/api/v1/system/tenants/:tenantCodigo/roles/:code/permissions", http.MethodPut, true, usecase, "replace-permissions")
+	return &httpapi.SystemHandler{
+		Method: http.MethodPut,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code/permissions",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.ReplacePermissions(c.Request().Context(), tenantCodigo, c.Param("code"), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
 }

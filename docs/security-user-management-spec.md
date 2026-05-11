@@ -418,7 +418,7 @@ Permission response:
 
 ```json
 {
-  "code": "users.read",
+  "code": "security.users.read",
   "description": "Read users"
 }
 ```
@@ -431,7 +431,7 @@ Effective user permissions response:
   "username": "kevin",
   "permissions": [
     {
-      "code": "users.read",
+      "code": "security.users.read",
       "description": "Read users"
     }
   ]
