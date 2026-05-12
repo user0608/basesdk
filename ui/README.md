@@ -14,6 +14,12 @@ npm install
 npm run dev
 ```
 
+El `example` usa `VITE_API_URL` y por defecto queda configurado en `ui/example/.env` con:
+
+```bash
+VITE_API_URL=http://localhost:7622
+```
+
 Comandos utiles:
 
 ```bash

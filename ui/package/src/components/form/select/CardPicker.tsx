@@ -96,11 +96,11 @@ export const CardPicker = <TFormValues extends FieldValues, TOption extends Sele
               disabled={readOnly || loading}
               onClick={() => toggleValue(option.value)}
               className={classNames(
-                "inline-flex items-center rounded-lg border px-3 py-2 text-sm transition-colors",
-                "focus:outline-none focus:ring-2 focus:ring-[color:var(--ui-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60",
+                "inline-flex items-center rounded-xl px-3 py-2 text-sm shadow-sm ring-1 ring-inset transition-colors",
+                "focus:outline-none focus:ring-2 focus:ring-ui-focus disabled:cursor-not-allowed disabled:opacity-60",
                 selected
-                  ? "border-[color:var(--ui-accent)] bg-[color:var(--ui-surface-selected)] text-[color:var(--ui-text)]"
-                  : "border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--ui-text-muted)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]",
+                  ? "bg-ui-surface-selected text-ui-text ring-ui-accent/40"
+                  : "bg-ui-surface text-ui-text-muted ring-ui-border/70 hover:bg-ui-surface-hover",
               )}
               aria-pressed={selected}
             >

@@ -137,7 +137,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
             disabled={readOnly}
             readOnly
             tabIndex={-1}
-            className="h-4 w-4 accent-slate-900"
+            className="h-4 w-4 accent-ui-accent"
           />
         );
       },
@@ -205,13 +205,13 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
       >
       <div
         className={classNames(
-          "overflow-hidden rounded-xl border shadow-sm",
-          error ? "border-[color:var(--ui-border-error)]" : "border-[color:var(--ui-border)]",
-          readOnly ? "bg-[color:var(--ui-surface-muted)]" : "bg-[color:var(--ui-panel)]",
+          "overflow-hidden rounded-2xl shadow-sm ring-1 ring-inset",
+          error ? "ring-ui-danger" : "ring-ui-border/70",
+          readOnly ? "bg-ui-surface-muted" : "bg-ui-panel",
         )}
       >
-        <div className="flex items-center gap-2 border-b border-[color:var(--ui-border)] px-3 py-2">
-          <FiSearch size={16} className="shrink-0 text-[color:var(--ui-text-soft)]" />
+        <div className="flex items-center gap-2 border-b border-ui-border/60 px-3 py-2">
+          <FiSearch size={16} className="shrink-0 text-ui-text-soft" />
 
           <input
             id={`${id}-search`}
@@ -221,13 +221,13 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
             placeholder={loading ? "Cargando..." : "Buscar..."}
             onBlur={() => controller.field.onBlur()}
             onChange={(event) => table.setGlobalFilter(event.target.value)}
-            className="h-8 w-full bg-transparent text-sm text-[color:var(--ui-text)] outline-none placeholder:text-[color:var(--ui-text-soft)] disabled:cursor-not-allowed"
+            className="h-8 w-full bg-transparent text-sm text-ui-text outline-none placeholder:text-ui-text-soft disabled:cursor-not-allowed"
           />
         </div>
 
-        <div className="flex min-h-10 flex-wrap items-start justify-between gap-3 border-b border-[color:var(--ui-border)] bg-[color:var(--ui-surface-muted)] px-3 py-2">
+        <div className="flex min-h-10 flex-wrap items-start justify-between gap-3 border-b border-ui-border/60 bg-ui-surface-muted px-3 py-2">
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-2">
-            <span className="shrink-0 pt-0.5 text-xs font-medium text-[color:var(--ui-text-soft)]">
+            <span className="shrink-0 pt-0.5 text-xs font-medium text-ui-text-soft">
               {selectedOptions.length === 0
                 ? "Sin selección"
                 : selectedOptions.length === 1
@@ -240,7 +240,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
                 {selectedOptions.map((option) => (
                   <span
                     key={option.value}
-                  className="inline-flex min-w-0 max-w-36 items-center gap-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-2 py-0.5 text-xs text-[color:var(--ui-text-muted)]"
+                  className="inline-flex min-w-0 max-w-36 items-center gap-1 rounded-full bg-ui-surface px-2 py-0.5 text-xs text-ui-text-muted ring-1 ring-inset ring-ui-border/50"
                   >
                     <span className="truncate">{option.label}</span>
 
@@ -248,7 +248,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
                       <button
                         type="button"
                         onClick={() => removeValue(option.value)}
-                        className="shrink-0 rounded text-[color:var(--ui-text-soft)] hover:text-[color:var(--ui-text)]"
+                        className="shrink-0 rounded text-ui-text-soft hover:text-ui-text"
                       >
                         <FiX size={12} />
                       </button>
@@ -264,7 +264,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
             <button
               type="button"
               onClick={clearValue}
-              className="shrink-0 text-xs font-medium text-[color:var(--ui-text-soft)] hover:text-[color:var(--ui-text)]"
+              className="shrink-0 text-xs font-medium text-ui-text-soft hover:text-ui-text"
             >
               Limpiar
             </button>
@@ -283,16 +283,16 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
                       key={row.id}
                       onClick={() => selectValue(row.original.value)}
                       className={classNames(
-                        "h-10 border-b border-[color:var(--ui-border)]/50 last:border-b-0",
-                        readOnly || loading ? "cursor-default" : "cursor-pointer hover:bg-[color:var(--ui-surface-hover)]",
-                        selected && "bg-[color:var(--ui-surface-selected)]",
+                        "h-10 border-b border-ui-border/40 last:border-b-0",
+                        readOnly || loading ? "cursor-default" : "cursor-pointer hover:bg-ui-surface-hover",
+                        selected && "bg-ui-surface-selected",
                       )}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
                           className={classNames(
-                            "px-3 py-2 align-middle text-[color:var(--ui-text-muted)]",
+                            "px-3 py-2 align-middle text-ui-text-muted",
                             cell.column.id === "selected" && "w-10",
                           )}
                         >
@@ -304,7 +304,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
                 })}
 
                 {Array.from({ length: emptyRowsCount }).map((_, index) => (
-                  <tr key={`empty-${index}`} className="h-10 border-b border-slate-100 last:border-b-0">
+                  <tr key={`empty-${index}`} className="h-10 border-b border-ui-border/30 last:border-b-0">
                     {Array.from({ length: columnCount }).map((__, cellIndex) => (
                       <td
                         key={cellIndex}
@@ -321,14 +321,14 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
               </>
             ) : (
               <>
-                <tr className="h-10 border-b border-slate-100">
-                  <td colSpan={columnCount} className="px-3 py-3 text-sm text-[color:var(--ui-text-soft)]">
+                <tr className="h-10 border-b border-ui-border/30">
+                  <td colSpan={columnCount} className="px-3 py-3 text-sm text-ui-text-soft">
                     {loading ? "Cargando..." : emptyMessage}
                   </td>
                 </tr>
 
                 {Array.from({ length: Math.max(0, pageSize - 1) }).map((_, index) => (
-                  <tr key={`empty-${index}`} className="h-10 border-b border-slate-100 last:border-b-0">
+                  <tr key={`empty-${index}`} className="h-10 border-b border-ui-border/30 last:border-b-0">
                     {Array.from({ length: columnCount }).map((__, cellIndex) => (
                       <td
                         key={cellIndex}
@@ -347,8 +347,8 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
           </tbody>
         </table>
 
-        <div className="flex items-center justify-between border-t border-[color:var(--ui-border)] bg-[color:var(--ui-surface-muted)] px-3 py-2">
-          <span className="text-xs text-[color:var(--ui-text-soft)]">
+        <div className="flex items-center justify-between border-t border-ui-border/60 bg-ui-surface-muted px-3 py-2">
+          <span className="text-xs text-ui-text-soft">
             {filteredRowsCount} resultado
             {filteredRowsCount === 1 ? "" : "s"}
           </span>
@@ -358,12 +358,12 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
               type="button"
               disabled={readOnly || loading || !table.getCanPreviousPage()}
               onClick={() => table.previousPage()}
-             className="rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-2 py-1 text-xs text-[color:var(--ui-text-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+             className="rounded-lg bg-ui-surface px-2 py-1 text-xs text-ui-text-muted shadow-sm ring-1 ring-inset ring-ui-border/70 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
             </button>
 
-             <span className="text-xs text-[color:var(--ui-text-soft)]">
+             <span className="text-xs text-ui-text-soft">
                {currentPage} / {totalPages}
              </span>
 
@@ -371,7 +371,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
               type="button"
               disabled={readOnly || loading || !table.getCanNextPage()}
               onClick={() => table.nextPage()}
-             className="rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-2 py-1 text-xs text-[color:var(--ui-text-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+             className="rounded-lg bg-ui-surface px-2 py-1 text-xs text-ui-text-muted shadow-sm ring-1 ring-inset ring-ui-border/70 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente
             </button>

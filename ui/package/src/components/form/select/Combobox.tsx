@@ -228,18 +228,16 @@ export const Combobox = <TFormValues extends FieldValues>({
     <div
       className={classNames(
         "flex shrink-0 items-center gap-2 px-3 py-2",
-        dropdownPosition?.direction === "top"
-          ? "border-t border-[color:var(--ui-border)]"
-          : "border-b border-[color:var(--ui-border)]",
+        dropdownPosition?.direction === "top" ? "border-t border-ui-border/70" : "border-b border-ui-border/70",
       )}
     >
-      <FiSearch size={16} className="text-[color:var(--ui-text-soft)]" />
+      <FiSearch size={16} className="text-ui-text-soft" />
 
       <input
         value={search}
         placeholder={searchPlaceholder}
         onChange={(event) => setSearch(event.target.value)}
-        className="h-8 w-full bg-transparent text-sm text-[color:var(--ui-text)] outline-none placeholder:text-[color:var(--ui-text-soft)]"
+        className="h-8 w-full bg-transparent text-sm text-ui-text outline-none placeholder:text-ui-text-soft"
       />
     </div>
   );
@@ -277,19 +275,19 @@ export const Combobox = <TFormValues extends FieldValues>({
                   type="button"
                   onClick={() => selectValue(option.value)}
                   className={classNames(
-                     "flex h-10 w-full items-center gap-2 px-3 text-left text-sm hover:bg-[color:var(--ui-surface-hover)]",
-                     selected ? "text-[color:var(--ui-text)]" : "text-[color:var(--ui-text-muted)]",
-                   )}
-                 >
-                   <span
-                     className={classNames(
-                       "flex h-4 w-4 items-center justify-center border",
-                       multiple ? "rounded" : "rounded-full",
-                       selected
-                         ? "border-[color:var(--ui-accent)] bg-[color:var(--ui-accent)] text-[color:var(--ui-bg)]"
-                         : "border-[color:var(--ui-border)] bg-[color:var(--ui-surface)]",
-                     )}
-                   >
+                     "flex h-10 w-full items-center gap-2 px-3 text-left text-sm hover:bg-ui-surface-hover",
+                     selected ? "text-ui-text" : "text-ui-text-muted",
+                    )}
+                  >
+                    <span
+                      className={classNames(
+                        "flex h-4 w-4 items-center justify-center border",
+                        multiple ? "rounded" : "rounded-full",
+                        selected
+                          ? "border-ui-accent bg-ui-accent text-ui-text-inverse"
+                          : "border-ui-border bg-ui-surface",
+                      )}
+                    >
                     {selected && <FiCheck size={12} />}
                   </span>
 
@@ -302,7 +300,7 @@ export const Combobox = <TFormValues extends FieldValues>({
           </>
         );
       })() : (
-         <div className="px-3 py-2 text-sm text-[color:var(--ui-text-soft)]">{emptyMessage}</div>
+         <div className="px-3 py-2 text-sm text-ui-text-soft">{emptyMessage}</div>
        )}
     </div>
   );
@@ -361,7 +359,7 @@ export const Combobox = <TFormValues extends FieldValues>({
                     : selectedOptions).map((option) => (
                     <span
                       key={option.value}
-                       className="inline-flex max-w-full items-center gap-1 rounded-md border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-muted)] px-1.5 py-0.5 text-xs text-[color:var(--ui-text-muted)]"
+                       className="inline-flex max-w-full items-center gap-1 rounded-lg bg-ui-surface-muted px-1.5 py-0.5 text-xs text-ui-text-muted ring-1 ring-inset ring-ui-border/50"
                      >
                       <span className="truncate">{option.label}</span>
 
@@ -372,7 +370,7 @@ export const Combobox = <TFormValues extends FieldValues>({
                             event.stopPropagation();
                             removeValue(option.value);
                           }}
-                           className="rounded text-[color:var(--ui-text-soft)] hover:text-[color:var(--ui-text)]"
+                           className="rounded text-ui-text-soft hover:text-ui-text"
                         >
                           <FiX size={12} />
                         </button>
@@ -381,7 +379,7 @@ export const Combobox = <TFormValues extends FieldValues>({
                   ))}
 
                   {typeof maxVisibleSelected === "number" && selectedOptions.length > maxVisibleSelected && (
-                     <span className="inline-flex items-center rounded-md border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-muted)] px-1.5 py-0.5 text-xs text-[color:var(--ui-text-soft)]">
+                     <span className="inline-flex items-center rounded-lg bg-ui-surface-muted px-1.5 py-0.5 text-xs text-ui-text-soft ring-1 ring-inset ring-ui-border/50">
                       +{selectedOptions.length - maxVisibleSelected}
                     </span>
                   )}
@@ -390,7 +388,7 @@ export const Combobox = <TFormValues extends FieldValues>({
                 <span className="truncate">{selectedOptions[0]?.label}</span>
               )
             ) : (
-               <span className="text-[color:var(--ui-text-soft)]">{placeholder}</span>
+               <span className="text-ui-text-soft">{placeholder}</span>
              )}
            </span>
 
@@ -402,7 +400,7 @@ export const Combobox = <TFormValues extends FieldValues>({
                   event.stopPropagation();
                   clearValue();
                 }}
-                 className="rounded p-0.5 text-[color:var(--ui-text-soft)] hover:text-[color:var(--ui-text)]"
+                 className="rounded p-0.5 text-ui-text-soft hover:text-ui-text"
                >
                 <FiX size={14} />
               </button>
@@ -410,14 +408,14 @@ export const Combobox = <TFormValues extends FieldValues>({
 
             <FiChevronDown
               size={small ? 16 : 18}
-               className={classNames("text-[color:var(--ui-text-soft)] transition-transform", open && "rotate-180")}
-             />
+               className={classNames("text-ui-text-soft transition-transform", open && "rotate-180")}
+              />
            </span>
          </button>
 
          {open && (
            <div
-             className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-panel)] shadow-lg"
+              className="fixed z-50 flex flex-col overflow-hidden rounded-2xl bg-ui-panel shadow-xl ring-1 ring-inset ring-ui-border/60"
              style={{
               top: dropdownPosition?.top,
               bottom: dropdownPosition?.bottom,

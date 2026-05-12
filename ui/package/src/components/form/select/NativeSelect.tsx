@@ -102,7 +102,7 @@ export const NativeSelect = <TFormValues extends FieldValues>({
         <FiChevronDown
           size={small ? 16 : 18}
           className={classNames(
-            "pointer-events-none absolute right-2 text-[color:var(--ui-text-soft)]",
+            "pointer-events-none absolute right-2 text-ui-text-soft",
             multiple ? "top-3" : "top-1/2 -translate-y-1/2",
           )}
         />

@@ -1,287 +1,212 @@
-import { useMemo, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { Link, Outlet, Route, Routes } from "react-router-dom";
 import {
-  AsyncSelectField,
   Button,
-  createFormSchema,
-  InputField,
-  SelectField,
-  useCustomForm,
-  type SelectOption,
+  RequireGuest,
+  RequireSystem,
+  RequireTenant,
+  SystemLoginPage,
+  TenantLoginPage,
+  useAuth,
 } from "@basesdk/ui";
-import * as yup from "yup";
 
-type DepartmentOption = SelectOption<{
-  area: string;
-}>;
+const PageShell = () => {
+  return (
+    <main className="min-h-screen bg-ui-bg px-6 py-16 text-ui-text">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 rounded-3xl bg-ui-panel p-8 shadow-2xl shadow-black/10 ring-1 ring-inset ring-ui-border/60">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border/60 pb-6">
+          <div className="space-y-3">
+            <span className="inline-flex rounded-full bg-ui-surface-selected px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-ui-accent ring-1 ring-inset ring-ui-accent/15">
+              UI package playground
+            </span>
+            <h1 className="text-4xl font-semibold tracking-tight">Auth + Routing demo</h1>
+            <p className="max-w-3xl text-sm leading-6 text-ui-text-muted">
+              La libreria UI gestiona `tenant login`, `system login`, sesiones separadas, guards y
+              `HttpApi` compartido.
+            </p>
+          </div>
 
-const roleOptions: SelectOption[] = [
-  { value: "designer", label: "Designer" },
-  { value: "frontend", label: "Frontend" },
-  { value: "backend", label: "Backend" },
-  { value: "product", label: "Product" },
-];
+          <nav className="flex flex-wrap gap-2">
+            <Link to="/">
+              <Button variant="secondary" type="button">
+                Inicio
+              </Button>
+            </Link>
+            <Link to="/login">
+              <Button variant="secondary" type="button">
+                Tenant login
+              </Button>
+            </Link>
+            <Link to="/system/login">
+              <Button variant="secondary" type="button">
+                System login
+              </Button>
+            </Link>
+          </nav>
+        </header>
 
-const stackOptions: SelectOption[] = [
-  { value: "react", label: "React" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "tailwind", label: "Tailwind" },
-  { value: "tanstack-query", label: "TanStack Query" },
-  { value: "react-hook-form", label: "React Hook Form" },
-];
-
-const planOptions: SelectOption[] = [
-  { value: "starter", label: "Starter" },
-  { value: "growth", label: "Growth" },
-  { value: "scale", label: "Scale" },
-];
-
-const countryOptions: SelectOption[] = [
-  { value: "pe", label: "Peru" },
-  { value: "mx", label: "Mexico" },
-  { value: "co", label: "Colombia" },
-  { value: "cl", label: "Chile" },
-];
-
-const managerOptions: SelectOption[] = [
-  { value: "ana-ramirez", label: "Ana Ramirez" },
-  { value: "bruno-salazar", label: "Bruno Salazar" },
-  { value: "camila-ruiz", label: "Camila Ruiz" },
-  { value: "diego-castro", label: "Diego Castro" },
-];
-
-const departmentOptions: DepartmentOption[] = [
-  { value: "eng-platform", label: "Platform", area: "Engineering" },
-  { value: "eng-ui", label: "UI Systems", area: "Engineering" },
-  { value: "ops-finance", label: "Finance Ops", area: "Operations" },
-  { value: "ops-support", label: "Support", area: "Operations" },
-  { value: "growth-sales", label: "Sales", area: "Growth" },
-  { value: "growth-partners", label: "Partners", area: "Growth" },
-];
-
-const schema = createFormSchema((validators) => ({
-  fullName: validators.requiredString(),
-  email: validators.requiredEmail(),
-  celular: validators.requiredCelular(),
-  role: validators.requiredString(),
-  manager: validators.requiredString(),
-  stacks: validators.requiredStringArray(),
-  plan: validators.requiredString(),
-  country: validators.requiredString(),
-  departments: validators.requiredStringArray(),
-  active: validators.requiredBoolean(),
-  notes: validators.nullableString(),
-}));
-
-type DemoFormValues = yup.InferType<typeof schema>;
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export default function App() {
-  const [submittedValues, setSubmittedValues] = useState<DemoFormValues | null>(null);
-
-  const form = useCustomForm(schema, {
-    defaultValues: {
-      fullName: "",
-      email: "",
-      celular: "",
-      role: "frontend",
-      manager: "camila-ruiz",
-      stacks: ["react", "typescript"],
-      plan: "growth",
-      country: "pe",
-      departments: ["eng-ui"],
-      active: true,
-      notes: null,
-    },
-  });
-
-  const departmentColumns = useMemo<ColumnDef<DepartmentOption, unknown>[]>(
-    () => [
-      {
-        accessorKey: "area",
-        header: "Area",
-        cell: ({ row }) => <span className="text-slate-500">{row.original.area}</span>,
-      },
-    ],
-    [],
+        <Outlet />
+      </div>
+    </main>
   );
+};
 
-  const loadCountries = async () => {
-    await wait(300);
-    return countryOptions;
-  };
-
-  const loadDepartments = async () => {
-    await wait(450);
-    return departmentOptions;
-  };
+const HomePage = () => {
+  const { tenantSession, systemSession, isReady } = useAuth();
 
   return (
-    <main className="min-h-screen bg-[color:var(--ui-bg)] px-6 py-16 text-[color:var(--ui-text)] transition-colors">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 rounded-3xl border border-[color:var(--ui-border)] bg-[color:var(--ui-panel)] p-8 shadow-2xl shadow-black/10 transition-colors">
-        <div className="space-y-3">
-          <span className="inline-flex rounded-full border border-[color:var(--ui-accent)]/30 bg-[color:var(--ui-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--ui-accent)]">
-            UI package playground
-          </span>
-          <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--ui-text)]">Formulario real con Yup + RHF</h1>
-          <p className="max-w-3xl text-sm leading-6 text-[color:var(--ui-text-muted)]">
-            Este ejemplo usa `createFormSchema`, `useCustomForm`, `InputField`, `SelectField` y
-            `AsyncSelectField` desde el paquete local `@basesdk/ui`.
+    <section className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+      <div className="grid gap-6 rounded-2xl bg-ui-panel-muted p-6 shadow-sm ring-1 ring-inset ring-ui-border/50">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">Estado actual</h2>
+          <p className="text-sm text-ui-text-muted">
+            Este demo deja coexistir sesiones `tenant` y `system` en paralelo.
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
-          <form
-            onSubmit={form.handleSubmit((values) => setSubmittedValues(values))}
-            className="grid gap-6 rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-panel-muted)] p-6"
-          >
-            <section className="grid gap-4 md:grid-cols-2">
-              <InputField
-                form={form}
-                name="fullName"
-                label="Nombre completo"
-                placeholder="Ada Lovelace"
-              />
-              <InputField
-                form={form}
-                name="email"
-                label="Correo electronico"
-                type="email"
-                placeholder="ada@basesdk.dev"
-              />
-              <InputField
-                form={form}
-                name="celular"
-                label="Celular"
-                placeholder="999 111 222"
-              />
-              <InputField
-                form={form}
-                name="active"
-                variant="boolean"
-                label="Estado"
-                yesLabel="Activo"
-                noLabel="Inactivo"
-              />
-            </section>
+        <div className="grid gap-4 md:grid-cols-2">
+          <SessionCard
+            title="Tenant session"
+            active={Boolean(tenantSession)}
+            body={
+              tenantSession
+                ? {
+                    username: tenantSession.username,
+                    tenant: tenantSession.tenant,
+                    permissions: tenantSession.permissions.length,
+                  }
+                : null
+            }
+            to="/app"
+          />
+          <SessionCard
+            title="System session"
+            active={Boolean(systemSession)}
+            body={systemSession ? { username: systemSession.username, permissions: systemSession.permissions } : null}
+            to="/system"
+          />
+        </div>
 
-            <section className="grid gap-4 md:grid-cols-2">
-              <SelectField
-                form={form}
-                name="role"
-                variant="native"
-                label="Rol principal"
-                options={roleOptions}
-              />
-              <SelectField
-                form={form}
-                name="manager"
-                variant="combobox"
-                label="Manager"
-                options={managerOptions}
-                placeholder="Selecciona un manager"
-                searchPlaceholder="Buscar manager"
-              />
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-2">
-              <SelectField
-                form={form}
-                name="plan"
-                variant="card"
-                label="Plan"
-                options={planOptions}
-              />
-            </section>
-
-            <section className="grid gap-4">
-              <SelectField
-                form={form}
-                name="stacks"
-                variant="combobox"
-                label="Stack del equipo"
-                info="Multi-select visible sin ocultar seleccionados"
-                options={stackOptions}
-                multiple
-                placeholder="Selecciona tecnologias"
-                searchPlaceholder="Buscar tecnologia"
-              />
-              <AsyncSelectField
-                form={form}
-                name="country"
-                variant="native"
-                label="Pais"
-                queryKey={["countries"]}
-                loadOptions={loadCountries}
-                placeholder="Selecciona un pais"
-              />
-              <AsyncSelectField
-                form={form}
-                name="departments"
-                variant="table"
-                label="Departamentos"
-                queryKey={["departments"]}
-                loadOptions={loadDepartments}
-                columns={departmentColumns}
-                searchKeys={["label", "area"]}
-                multiple
-                pageSize={4}
-              />
-            </section>
-
-            <section className="grid gap-4">
-              <InputField
-                form={form}
-                name="notes"
-                label="Notas"
-                placeholder="Notas internas opcionales"
-              />
-              <InputField
-                form={form}
-                name="active"
-                variant="checkbox"
-                label="Visible en dashboard"
-                info="Mismo valor booleano con otra representacion visual"
-              />
-            </section>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit">Guardar formulario</Button>
-              <Button variant="secondary" type="button" onClick={() => form.reset()}>
-                Reset
-              </Button>
-            </div>
-          </form>
-
-          <aside className="grid gap-6">
-            <section className="rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-panel-muted)] p-6">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--ui-text-muted)]">Estado</h2>
-              <dl className="mt-4 grid gap-3 text-sm text-[color:var(--ui-text-muted)]">
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="text-[color:var(--ui-text-soft)]">Valido</dt>
-                  <dd>{form.formState.isValid ? "Si" : "No"}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="text-[color:var(--ui-text-soft)]">Dirty</dt>
-                  <dd>{form.formState.isDirty ? "Si" : "No"}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="text-[color:var(--ui-text-soft)]">Enviado</dt>
-                  <dd>{form.formState.submitCount}</dd>
-                </div>
-              </dl>
-            </section>
-
-            <section className="rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-panel-muted)] p-6">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--ui-text-muted)]">Payload</h2>
-              <pre className="mt-4 overflow-auto rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-bg)] p-4 text-xs leading-6 text-[color:var(--ui-accent)]">
-                {JSON.stringify(submittedValues ?? form.getValues(), null, 2)}
-              </pre>
-            </section>
-          </aside>
+        <div className="text-sm text-ui-text-soft">
+          Auth provider listo: {isReady ? "si" : "no"}
         </div>
       </div>
-    </main>
+
+      <section className="grid gap-4 rounded-2xl bg-ui-panel-muted p-6 shadow-sm ring-1 ring-inset ring-ui-border/50">
+        <h2 className="text-xl font-semibold">Rutas del demo</h2>
+        <ul className="grid gap-3 text-sm text-ui-text-muted">
+          <li>`/login` : login tenant</li>
+          <li>`/system/login` : login system</li>
+          <li>`/app` : area privada tenant</li>
+          <li>`/system` : area privada system</li>
+        </ul>
+      </section>
+    </section>
+  );
+};
+
+const SessionCard = ({
+  title,
+  active,
+  body,
+  to,
+}: {
+  title: string;
+  active: boolean;
+  body: Record<string, unknown> | null;
+  to: string;
+}) => {
+  return (
+    <div className="grid gap-3 rounded-2xl bg-ui-panel p-5 shadow-sm ring-1 ring-inset ring-ui-border/50">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold">{title}</h3>
+        <span className="rounded-full bg-ui-surface-muted px-2.5 py-1 text-xs text-ui-text-soft ring-1 ring-inset ring-ui-border/50">
+          {active ? "activa" : "sin sesion"}
+        </span>
+      </div>
+
+      <pre className="overflow-auto rounded-xl bg-ui-bg p-4 text-xs leading-6 text-ui-text-muted ring-1 ring-inset ring-ui-border/40">
+        {JSON.stringify(body, null, 2)}
+      </pre>
+
+      <Link to={to}>
+        <Button type="button">Ir al area protegida</Button>
+      </Link>
+    </div>
+  );
+};
+
+const TenantAppPage = () => {
+  const { tenantSession, logoutTenant } = useAuth();
+
+  return (
+    <section className="grid gap-6 rounded-2xl bg-ui-panel-muted p-6 shadow-sm ring-1 ring-inset ring-ui-border/50">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">Area privada tenant</h2>
+          <p className="text-sm text-ui-text-muted">
+            Esta ruta exige `tenantSession` y ya trae permisos al iniciar sesion.
+          </p>
+        </div>
+
+        <Button type="button" variant="secondary" onClick={logoutTenant}>
+          Cerrar sesion tenant
+        </Button>
+      </div>
+
+      <pre className="overflow-auto rounded-xl bg-ui-panel p-4 text-xs leading-6 text-ui-text-muted ring-1 ring-inset ring-ui-border/40">
+        {JSON.stringify(tenantSession, null, 2)}
+      </pre>
+    </section>
+  );
+};
+
+const SystemAppPage = () => {
+  const { systemSession, logoutSystem } = useAuth();
+
+  return (
+    <section className="grid gap-6 rounded-2xl bg-ui-panel-muted p-6 shadow-sm ring-1 ring-inset ring-ui-border/50">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">Area privada system</h2>
+          <p className="text-sm text-ui-text-muted">
+            Esta ruta exige `systemSession`. Los permisos quedan `null` hasta que exista el endpoint backend.
+          </p>
+        </div>
+
+        <Button type="button" variant="secondary" onClick={logoutSystem}>
+          Cerrar sesion system
+        </Button>
+      </div>
+
+      <pre className="overflow-auto rounded-xl bg-ui-panel p-4 text-xs leading-6 text-ui-text-muted ring-1 ring-inset ring-ui-border/40">
+        {JSON.stringify(systemSession, null, 2)}
+      </pre>
+    </section>
+  );
+};
+
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<PageShell />}>
+        <Route index element={<HomePage />} />
+
+        <Route element={<RequireGuest scope="tenant" />}>
+          <Route path="/login" element={<TenantLoginPage defaultTenantCodigo="tenant_default" />} />
+        </Route>
+
+        <Route element={<RequireGuest scope="system" />}>
+          <Route path="/system/login" element={<SystemLoginPage />} />
+        </Route>
+
+        <Route element={<RequireTenant />}>
+          <Route path="/app" element={<TenantAppPage />} />
+        </Route>
+
+        <Route element={<RequireSystem />}>
+          <Route path="/system" element={<SystemAppPage />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 }

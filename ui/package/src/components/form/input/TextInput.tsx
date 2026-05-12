@@ -88,8 +88,8 @@ export const TextInput = <TFormValues extends FieldValues>({
             onClick={onIconClick}
             disabled={!onIconClick}
             className={classNames(
-              "absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[color:var(--ui-text-soft)]",
-              onIconClick && "hover:text-[color:var(--ui-text)]",
+              "absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ui-text-soft",
+              onIconClick && "hover:text-ui-text",
               !onIconClick && "cursor-default",
             )}
           >

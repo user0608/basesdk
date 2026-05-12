@@ -88,7 +88,7 @@ export const BooleanSelect = <TFormValues extends FieldValues>({
 
         <FiChevronDown
           size={small ? 16 : 18}
-          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[color:var(--ui-text-soft)]"
+          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ui-text-soft"
         />
       </div>
     </FormField>

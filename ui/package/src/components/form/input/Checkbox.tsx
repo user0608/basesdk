@@ -49,12 +49,12 @@ export const Checkbox = <TFormValues extends FieldValues>({
       <label
         htmlFor={id}
         className={classNames(
-          "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
-          error ? "border-[color:var(--ui-border-error)]" : "border-[color:var(--ui-border)]",
+          "flex items-center gap-2 rounded-xl px-3 py-2 text-sm shadow-sm ring-1 ring-inset transition-colors",
+          error ? "ring-ui-danger" : "ring-ui-border/70",
           readOnly
-            ? "bg-[color:var(--ui-surface-muted)] text-[color:var(--ui-text-soft)]"
-            : "bg-[color:var(--ui-surface)] text-[color:var(--ui-text-muted)]",
-          !readOnly && "hover:bg-[color:var(--ui-surface-hover)]",
+            ? "bg-ui-surface-muted text-ui-text-soft"
+            : "bg-ui-surface text-ui-text-muted",
+          !readOnly && "hover:bg-ui-surface-hover",
           className,
         )}
       >
@@ -69,7 +69,7 @@ export const Checkbox = <TFormValues extends FieldValues>({
             controller.field.onChange(next);
             onChange?.(next);
           }}
-          className="h-4 w-4 accent-[color:var(--ui-accent)]"
+          className="h-4 w-4 accent-ui-accent"
         />
         <span className="select-none">{checked ? "Sí" : "No"}</span>
       </label>
