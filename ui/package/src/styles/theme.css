@@ -1,0 +1,23 @@
+:root {
+  --ui-bg: #edf4ee;
+  --ui-panel: #ffffff;
+  --ui-panel-muted: #f7fbf7;
+  --ui-surface: #ffffff;
+  --ui-surface-muted: #f2f8f2;
+  --ui-surface-hover: #e7f3e8;
+  --ui-surface-selected: #d7ecda;
+  --ui-border: #c8dccb;
+  --ui-border-strong: #9bbca2;
+  --ui-border-error: #dc6b62;
+  --ui-text: #173125;
+  --ui-text-muted: #355544;
+  --ui-text-soft: #678372;
+  --ui-text-inverse: #f6fbf7;
+  --ui-primary: #2d6b45;
+  --ui-primary-hover: #24583a;
+  --ui-accent: #3f8a57;
+  --ui-focus-ring: rgba(63, 138, 87, 0.2);
+  --ui-danger-ring: rgba(220, 107, 98, 0.18);
+  --ui-tooltip-bg: #214632;
+  --ui-tooltip-text: #f6fbf7;
+}
