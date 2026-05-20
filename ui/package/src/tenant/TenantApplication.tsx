@@ -1,7 +1,11 @@
 import { Link, Navigate, Outlet, useRoutes } from "react-router-dom";
-import { Button } from "../components/actions/Button";
+import { DialogProvider } from "../components/dialog/DialogProvider";
+import { useConfirmDialog } from "../components/dialog/useConfirmDialog";
+import { FiLogOut } from "react-icons/fi";
 import { RequireGuest } from "../auth/guards/RequireGuest";
+import { RequireSystem } from "../auth/guards/RequireSystem";
 import { RequireTenant } from "../auth/guards/RequireTenant";
+import { SystemLoginPage } from "../auth/pages/SystemLoginPage";
 import { TenantLoginPage } from "../auth/pages/TenantLoginPage";
 import { useAuth } from "../auth/useAuth";
 import { createTenantModuleRoutes } from "../platform/routes";
@@ -27,6 +31,8 @@ type TenantApplicationProps<TRegistry extends ComponentRegistry, TPermission ext
   appSubtitle?: string;
   loginTitle?: string;
   loginSubtitle?: string;
+  systemLoginTitle?: string;
+  systemLoginSubtitle?: string;
   defaultTenantCodigo?: string;
   unauthorizedElement?: React.ReactNode;
 };
@@ -57,14 +63,37 @@ const TenantLauncher = <TRegistry extends ComponentRegistry, TPermission extends
   modules: MenuTree<ComponentId<TRegistry>, TPermission>;
   title: string;
 }) => {
-  const { tenantSession } = useAuth();
+  const { tenantSession, logoutTenant } = useAuth();
+  const confirm = useConfirmDialog();
   const visibleModules = filterMenuTree(modules, tenantSession?.permissions ?? []);
 
+  const onLogout = async () => {
+    const shouldLogout = await confirm({
+      title: "Cerrar sesion",
+      content: "Quieres cerrar la sesion actual?",
+      confirmLabel: "Cerrar sesion",
+      cancelLabel: "Continuar trabajando",
+    });
+
+    if (shouldLogout) {
+      logoutTenant();
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-ui-bg px-8 py-8 text-ui-text">
-      <div className="grid gap-8">
+    <main className="min-h-screen bg-ui-bg px-4 py-5 text-ui-text sm:px-6 lg:px-8 lg:py-8">
+      <div className="grid gap-6 lg:gap-8">
         <header className="flex items-center justify-between gap-6 border-b border-ui-border/25 pb-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-ui-text">{title}</h1>
+          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-ui-text sm:text-3xl">{title}</h1>
+          <button
+            type="button"
+            aria-label="Cerrar sesion"
+            title="Cerrar sesion"
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-ui-text-soft transition-colors hover:bg-ui-surface-hover hover:text-ui-text"
+            onClick={onLogout}
+          >
+            <FiLogOut size={18} />
+          </button>
         </header>
 
         {visibleModules.length === 0 ? (
@@ -111,7 +140,7 @@ const TenantWorkspaceShell = <TRegistry extends ComponentRegistry, TPermission e
   title: string;
   subtitle: string;
 }) => {
-  const { tenantSession, logoutTenant } = useAuth();
+  const { tenantSession } = useAuth();
 
   return (
     <TenantWorkspaceLayout
@@ -119,14 +148,53 @@ const TenantWorkspaceShell = <TRegistry extends ComponentRegistry, TPermission e
       subtitle={subtitle}
       modules={modules}
       permissions={tenantSession?.permissions ?? []}
-      actions={
-        <Button type="button" variant="secondary" onClick={logoutTenant}>
-          Cerrar sesion
-        </Button>
-      }
     >
       <Outlet />
     </TenantWorkspaceLayout>
+  );
+};
+
+const SystemLauncher = ({ title }: { title: string }) => {
+  const { systemSession, logoutSystem } = useAuth();
+  const confirm = useConfirmDialog();
+
+  const onLogout = async () => {
+    const shouldLogout = await confirm({
+      title: "Cerrar sesion",
+      content: "Quieres cerrar la sesion system actual?",
+      confirmLabel: "Cerrar sesion",
+      cancelLabel: "Continuar trabajando",
+    });
+
+    if (shouldLogout) {
+      logoutSystem();
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-ui-bg px-4 py-5 text-ui-text sm:px-6 lg:px-8 lg:py-8">
+      <div className="grid gap-6 lg:gap-8">
+        <header className="flex items-center justify-between gap-6 border-b border-ui-border/25 pb-4">
+          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-ui-text sm:text-3xl">{title}</h1>
+          <button
+            type="button"
+            aria-label="Cerrar sesion"
+            title="Cerrar sesion"
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-ui-text-soft transition-colors hover:bg-ui-surface-hover hover:text-ui-text"
+            onClick={onLogout}
+          >
+            <FiLogOut size={18} />
+          </button>
+        </header>
+
+        <section className="rounded-2xl bg-ui-panel p-4 shadow-sm ring-1 ring-inset ring-ui-border/30 sm:p-5">
+          <h2 className="text-lg font-semibold tracking-tight text-ui-text">Panel system</h2>
+          <p className="mt-1 text-sm leading-6 text-ui-text-muted">
+            Sesion activa para {systemSession?.username ?? "usuario system"}.
+          </p>
+        </section>
+      </div>
+    </main>
   );
 };
 
@@ -137,16 +205,19 @@ export const TenantApplication = <TRegistry extends ComponentRegistry, TPermissi
   appSubtitle = "Selecciona un modulo para entrar a su espacio de trabajo.",
   loginTitle = "Tenant Login",
   loginSubtitle = "Accede al entorno principal del ERP.",
+  systemLoginTitle = "System Login",
+  systemLoginSubtitle = "Accede al entorno administrativo global.",
   defaultTenantCodigo,
   unauthorizedElement,
 }: TenantApplicationProps<TRegistry, TPermission>) => {
-  return useRoutes([
+  const routes = useRoutes([
     { path: "/", element: <RootRedirect /> },
     {
+      path: "/login",
       element: <RequireGuest scope="tenant" />,
       children: [
         {
-          path: "/login",
+          index: true,
           element: (
             <TenantLoginPage
               title={loginTitle}
@@ -155,6 +226,26 @@ export const TenantApplication = <TRegistry extends ComponentRegistry, TPermissi
               redirectTo="/app"
             />
           ),
+        },
+      ],
+    },
+    {
+      path: "/system/login",
+      element: <RequireGuest scope="system" />,
+      children: [
+        {
+          index: true,
+          element: <SystemLoginPage title={systemLoginTitle} subtitle={systemLoginSubtitle} />,
+        },
+      ],
+    },
+    {
+      path: "/system",
+      element: <RequireSystem />,
+      children: [
+        {
+          index: true,
+          element: <SystemLauncher title={systemLoginTitle} />,
         },
       ],
     },
@@ -173,4 +264,6 @@ export const TenantApplication = <TRegistry extends ComponentRegistry, TPermissi
       ],
     },
   ]);
+
+  return <DialogProvider>{routes}</DialogProvider>;
 };

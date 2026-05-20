@@ -1,6 +1,14 @@
 export { Button } from "./components/actions/Button";
 export type { ButtonProps } from "./components/actions/Button";
 
+export { DialogProvider } from "./components/dialog/DialogProvider";
+export { useModal } from "./components/dialog/useModal";
+export { useConfirmDialog } from "./components/dialog/useConfirmDialog";
+export type { DialogApi, DialogContent, DialogContextValue, DialogOptions, DialogSize } from "./components/dialog/types";
+export type { ConfirmDialogOptions } from "./components/dialog/useConfirmDialog";
+
+export { deferPromise } from "./utils/deferPromise";
+
 export { InputField } from "./components/form/InputField";
 export type { InputFieldProps } from "./components/form/InputField";
 

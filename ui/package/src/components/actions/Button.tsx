@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 import { FiLoader } from "react-icons/fi";
 
 export type ButtonProps = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>> & {
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "danger";
   loading?: boolean;
 };
 
@@ -12,7 +12,8 @@ const baseClassName =
 const variantClassName: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary: "bg-ui-primary text-ui-text-inverse shadow-sm hover:bg-ui-primary-hover",
   secondary:
-    "bg-ui-surface text-ui-text shadow-sm ring-1 ring-inset ring-ui-border/70 hover:bg-ui-surface-hover"
+    "bg-ui-surface text-ui-text shadow-sm ring-1 ring-inset ring-ui-border/70 hover:bg-ui-surface-hover",
+  danger: "bg-ui-danger text-ui-text-inverse shadow-sm hover:bg-ui-danger/90",
 };
 
 export function Button({ children, className = "", variant = "primary", ...props }: ButtonProps) {

@@ -11,7 +11,6 @@ export default function App() {
       appSubtitle="Selecciona un modulo para entrar a su espacio de trabajo."
       loginTitle="Tenant Login"
       loginSubtitle="Accede al entorno principal del ERP."
-      defaultTenantCodigo="tenant_default"
     />
   );
 }
