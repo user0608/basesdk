@@ -43,3 +43,42 @@ export type {
   TenantLoginInput,
   TenantSession,
 } from "./auth/types";
+
+export { permissionCodes, Permissions } from "./generated/permissions";
+export type { PermissionCode } from "./generated/permissions";
+
+export { TenantApplication } from "./tenant/TenantApplication";
+
+export { defineComponentRegistry, defineMenuTree } from "./platform/registry";
+export { filterMenuTree, filterMenuTree as filterTenantMenuTree } from "./platform/menu";
+export {
+  hasAllPermissions,
+  hasAnyPermission,
+  hasPermission,
+  useCurrentPermissions,
+  useHasAllPermissions,
+  useHasAnyPermission,
+  useHasPermission,
+  useTenantPermissions,
+} from "./platform/permissions";
+export { RequirePermissions } from "./platform/RequirePermissions";
+export { createModuleRoutes, createTenantModuleRoutes } from "./platform/routes";
+export { WorkspaceLayout, TenantWorkspaceLayout } from "./platform/WorkspaceLayout";
+export type {
+  ComponentId,
+  ComponentRegistry,
+  MenuIcon,
+  MenuNode,
+  MenuTree,
+  ModuleNode,
+  OperationNode,
+  VisibleMenuNode,
+  VisibleMenuTree,
+  VisibleModuleNode,
+  VisibleOperationNode,
+  WorkspaceLayoutProps,
+  MenuTree as TenantMenuTree,
+  ModuleNode as TenantModuleNode,
+  MenuNode as TenantMenuNode,
+  OperationNode as TenantOperationNode,
+} from "./platform/types";

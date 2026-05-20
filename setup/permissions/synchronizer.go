@@ -5,6 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"strings"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type PermissionSynchronizer struct {
@@ -44,27 +48,41 @@ func (ps *PermissionSynchronizer) Run(ctx context.Context) error {
 		return err
 	}
 
-	tx := ps.storageManager.Conn(ctx)
+	tx := ps.storageManager.Conn(ctx).Session(
+		&gorm.Session{
+			Logger: logger.Default.LogMode(logger.Error),
+		},
+	)
 
-	const query = `
+	if len(definitions) == 0 {
+		return nil
+	}
+
+	var values strings.Builder
+	args := make([]any, 0, len(definitions)*2)
+	for i, definition := range definitions {
+		if i > 0 {
+			values.WriteString(",")
+		}
+
+		values.WriteString("(?, ?)")
+		args = append(args, definition.Code, definition.Description)
+	}
+
+	query := fmt.Sprintf(`
 		insert into permission (
 			code,
 			description
 		)
-		values (
-			?,
-			?
-		)
+		values %s
 		on conflict (code) do update
 		set
 			description = excluded.description
-	`
+	`, values.String())
 
-	for _, definition := range definitions {
-		rs := tx.Exec(query, definition.Code, definition.Description)
-		if rs.Error != nil {
-			return fmt.Errorf("sync permission %q: %w", definition.Code, rs.Error)
-		}
+	rs := tx.Exec(query, args...)
+	if rs.Error != nil {
+		return fmt.Errorf("sync permissions: %w", rs.Error)
 	}
 
 	return nil

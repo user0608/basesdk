@@ -9,4 +9,5 @@ cd "$repo_root"
 go run ./cmd/permissiongen \
 	-input permissions \
 	-output security/permissions/permissions.go \
+	-ts-output ui/package/src/generated/permissions.ts \
 	-package permissions
