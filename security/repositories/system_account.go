@@ -73,27 +73,6 @@ func (r *SystemUserRepository) UpdateSystemUser(ctx context.Context, user *model
 	return nil
 }
 
-func (r *SystemUserRepository) ChangeSystemUserPassword(ctx context.Context, username string, passwordHash string, updatedBy string) error {
-	now := time.Now()
-	tx := r.manager.Conn(ctx)
-
-	rs := tx.Model(&models.SystemAccount{}).
-		Where("username = ?", username).
-		Updates(map[string]any{
-			"password_hash": passwordHash,
-			"updated_by":    updatedBy,
-			"updated_at":    now,
-		})
-	if rs.Error != nil {
-		return errs.Pgf(rs.Error)
-	}
-	if rs.RowsAffected == 0 {
-		return errs.NotFoundDirect("usuario no encontrado")
-	}
-
-	return nil
-}
-
 func (r *SystemUserRepository) SetSystemUsersDisabled(ctx context.Context, usernames []string, disabled bool, updatedBy string) error {
 	tx := r.manager.Conn(ctx)
 	now := time.Now()
@@ -121,4 +100,21 @@ func (r *SystemUserRepository) DeleteSystemUsers(ctx context.Context, usernames 
 	}
 
 	return nil
+}
+
+func (r *SystemUserRepository) CountActiveSystemUsersExcluding(ctx context.Context, usernames []string) (int64, error) {
+	tx := r.manager.Conn(ctx)
+	var count int64
+
+	query := tx.Model(&models.SystemAccount{}).Where("disabled = false")
+	if len(usernames) > 0 {
+		query = query.Where("username not in ?", usernames)
+	}
+
+	rs := query.Count(&count)
+	if rs.Error != nil {
+		return 0, errs.Pgf(rs.Error)
+	}
+
+	return count, nil
 }

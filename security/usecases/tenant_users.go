@@ -47,16 +47,14 @@ func (u *TenantUsersUsecase) Create(ctx context.Context, tenantCodigo string, in
 	user := &models.AppUser{
 		TenantCodigo:       strings.TrimSpace(tenantCodigo),
 		Username:           strings.TrimSpace(input.Username),
-		Email:              strings.TrimSpace(input.Email),
 		FullName:           input.FullName,
-		EmailVerified:      input.EmailVerified,
 		MustChangePassword: input.MustChangePassword,
 		Disabled:           false,
 		CreatedBy:          createdBy,
 		CreatedAt:          time.Now(),
 	}
-	if user.TenantCodigo == "" || user.Username == "" || user.Email == "" {
-		return errs.BadRequestDirect("tenant, usuario y email son requeridos")
+	if user.TenantCodigo == "" || user.Username == "" {
+		return errs.BadRequestDirect("tenant y usuario son requeridos")
 	}
 	if err := user.ChangePassword(input.Password); err != nil {
 		return err
@@ -70,9 +68,7 @@ func (u *TenantUsersUsecase) Update(ctx context.Context, tenantCodigo string, us
 	return u.userRepository.UpdateAppUser(ctx, &models.AppUser{
 		TenantCodigo:       strings.TrimSpace(tenantCodigo),
 		Username:           strings.TrimSpace(username),
-		Email:              strings.TrimSpace(input.Email),
 		FullName:           input.FullName,
-		EmailVerified:      input.EmailVerified,
 		MustChangePassword: input.MustChangePassword,
 		Disabled:           input.Disabled,
 		UpdatedBy:          &updatedBy,
@@ -122,4 +118,36 @@ func (u *TenantUsersUsecase) FindUserPermissions(ctx context.Context, tenantCodi
 	}
 
 	return response, nil
+}
+
+func (u *TenantUsersUsecase) FindRoles(ctx context.Context, tenantCodigo string, username string) ([]dtos.RoleResponse, error) {
+	roles, err := u.userRepository.FindAppUserRoles(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(username))
+	if err != nil {
+		return nil, err
+	}
+	response := make([]dtos.RoleResponse, 0, len(roles))
+	for _, role := range roles {
+		response = append(response, toRoleResponse(role))
+	}
+	return response, nil
+}
+
+func (u *TenantUsersUsecase) ReplaceRoles(ctx context.Context, tenantCodigo string, username string, roleCodes []string, createdBy string) error {
+	return u.userRepository.ReplaceAppUserRoles(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(username), roleCodes, createdBy)
+}
+
+func (u *TenantUsersUsecase) FindGroups(ctx context.Context, tenantCodigo string, username string) ([]dtos.GroupResponse, error) {
+	groups, err := u.userRepository.FindAppUserGroups(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(username))
+	if err != nil {
+		return nil, err
+	}
+	response := make([]dtos.GroupResponse, 0, len(groups))
+	for _, group := range groups {
+		response = append(response, toGroupResponse(group))
+	}
+	return response, nil
+}
+
+func (u *TenantUsersUsecase) ReplaceGroups(ctx context.Context, tenantCodigo string, username string, groupCodes []string, createdBy string) error {
+	return u.userRepository.ReplaceAppUserGroups(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(username), groupCodes, createdBy)
 }

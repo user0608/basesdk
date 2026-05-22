@@ -3,14 +3,17 @@ package models
 import "time"
 
 type Role struct {
-	TenantCodigo string `gorm:"primaryKey"`
-	Code         string `gorm:"primaryKey"`
-	Description  *string
-	Disabled     bool
-	CreatedBy    string
-	CreatedAt    time.Time
-	UpdatedBy    *string
-	UpdatedAt    *time.Time
+	TenantCodigo     string `gorm:"primaryKey"`
+	Code             string `gorm:"primaryKey"`
+	Description      *string
+	Disabled         bool
+	UsersCount       int64 `gorm:"->"`
+	GroupsCount      int64 `gorm:"->"`
+	PermissionsCount int64 `gorm:"->"`
+	CreatedBy        string
+	CreatedAt        time.Time
+	UpdatedBy        *string
+	UpdatedAt        *time.Time
 }
 
 func (*Role) TableName() string {

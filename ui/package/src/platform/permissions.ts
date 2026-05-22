@@ -1,5 +1,6 @@
 import { useAuth } from "../auth/useAuth";
 import { Permissions } from "../generated/permissions";
+import { useLocation } from "react-router-dom";
 
 export const hasAllPermissions = <TPermission extends string>(
   grantedPermissions: readonly TPermission[] | null | undefined,
@@ -39,7 +40,12 @@ export const useTenantPermissions = () => {
   return tenantSession?.permissions ?? null;
 };
 
-export const useCurrentPermissions = useTenantPermissions;
+export const useCurrentPermissions = () => {
+  const { systemSession, tenantSession } = useAuth();
+  const location = useLocation();
+  if (location.pathname.startsWith("/system") && systemSession) return [Permissions.securityAdmin];
+  return tenantSession?.permissions ?? null;
+};
 
 export const useHasPermission = <TPermission extends string>(requiredPermission?: TPermission) => {
   const currentPermissions = useCurrentPermissions() as readonly TPermission[] | null;

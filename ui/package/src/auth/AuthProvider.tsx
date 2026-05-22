@@ -24,6 +24,10 @@ type TenantPermissionsResponse = {
   }>;
 };
 
+type TenantMeResponse = {
+  mustChangePassword: boolean;
+};
+
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children, getBaseUrl, storageKeyPrefix }: AuthProviderProps) => {
@@ -46,6 +50,16 @@ export const AuthProvider = ({ children, getBaseUrl, storageKeyPrefix }: AuthPro
   const logoutSystem = () => {
     storage.clearSystemSession();
     setSystemSession(null);
+  };
+
+  const completeTenantPasswordChange = () => {
+    setTenantSession((current) => {
+      if (!current) return current;
+
+      const next = { ...current, mustChangePassword: false };
+      storage.writeTenantSession(next);
+      return next;
+    });
   };
 
   const httpApi = useMemo(
@@ -79,10 +93,17 @@ export const AuthProvider = ({ children, getBaseUrl, storageKeyPrefix }: AuthPro
       tokenOverride: token,
     });
 
+    const meResponse = await httpApi.get<TenantMeResponse>({
+      path: "/api/v1/me",
+      auth: "none",
+      tokenOverride: token,
+    });
+
     const session = toTenantSession(
       token,
       decodeJwtClaims(token),
       permissionsResponse.permissions.map((permission) => permission.code),
+      meResponse.mustChangePassword,
     );
 
     storage.writeTenantSession(session);
@@ -108,6 +129,7 @@ export const AuthProvider = ({ children, getBaseUrl, storageKeyPrefix }: AuthPro
     httpApi,
     loginTenant,
     loginSystem,
+    completeTenantPasswordChange,
     logoutTenant,
     logoutSystem,
   };

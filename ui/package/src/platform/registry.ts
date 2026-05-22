@@ -1,6 +1,8 @@
-import type { ComponentRegistry, MenuTree } from "./types";
+import type { ApplicationRegistry, ComponentRegistry, MenuTree } from "./types";
 
 export const defineComponentRegistry = <TRegistry extends ComponentRegistry>(registry: TRegistry) => registry;
+
+export const defineRegistry = <TRegistry extends ApplicationRegistry>(registry: TRegistry) => registry;
 
 const trimSlashes = (value: string) => value.replace(/^\/+|\/+$/g, "");
 

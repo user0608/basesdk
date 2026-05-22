@@ -64,11 +64,9 @@ create table app_user
     tenant_codigo varchar(100) not null,
     username varchar(100) not null,
 
-    email varchar(255) not null,
     full_name varchar(255),
 
     password_hash varchar(255),
-    email_verified boolean not null default false,
     must_change_password boolean not null default false,
     last_login_at timestamp without time zone,
 
@@ -84,16 +82,12 @@ create table app_user
 
     constraint fk_app_user_tenant
     foreign key (tenant_codigo)
-    references tenant (codigo),
-
-    constraint uq_app_user_tenant_email
-    unique (tenant_codigo, email)
+    references tenant (codigo)
 );
 
 comment on table app_user is 'User account that belongs to a tenant.';
 comment on column app_user.username is 'Unique username inside the tenant.';
 comment on column app_user.password_hash is 'Hashed password. Never store plain text passwords.';
-comment on column app_user.email_verified is 'Indicates whether the user email has been verified.';
 comment on column app_user.must_change_password is 'Forces the user to change password on next login.';
 comment on column app_user.last_login_at is 'Timestamp of the latest successful login.';
 comment on column app_user.disabled is 'Disables user access without deleting the user.';
@@ -265,10 +259,8 @@ insert into app_user
 (
     tenant_codigo,
     username,
-    email,
     full_name,
     password_hash,
-    email_verified,
     must_change_password,
     last_login_at,
     disabled,
@@ -279,10 +271,8 @@ values
 (
     'tenant_default',
     'kevin',
-    'kevin@local',
     'Kevin',
     '$2a$12$rpC5L6AQt2x4hUlEqpiwROZQFhOOaAohIzFwPwgElgVDSW01Lcnvu',
-    true,
     false,
     null,
     false,

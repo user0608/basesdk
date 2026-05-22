@@ -9,6 +9,7 @@ export type TenantSession = {
   timeZone: string;
   expiresAt: string | null;
   permissions: string[];
+  mustChangePassword: boolean;
 };
 
 export type SystemSession = {
@@ -41,6 +42,7 @@ export type AuthContextValue = AuthState & {
   httpApi: HttpApi;
   loginTenant: (input: TenantLoginInput) => Promise<TenantSession>;
   loginSystem: (input: SystemLoginInput) => Promise<SystemSession>;
+  completeTenantPasswordChange: () => void;
   logoutTenant: () => void;
   logoutSystem: () => void;
 };

@@ -104,3 +104,15 @@ func (u *TenantGroupsUsecase) FindRoles(ctx context.Context, tenantCodigo string
 func (u *TenantGroupsUsecase) ReplaceRoles(ctx context.Context, tenantCodigo string, code string, roleCodes []string, createdBy string) error {
 	return u.repository.ReplaceGroupRoles(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code), roleCodes, createdBy)
 }
+
+func (u *TenantGroupsUsecase) FindPermissions(ctx context.Context, tenantCodigo string, code string) ([]dtos.PermissionResponse, error) {
+	permissions, err := u.repository.FindGroupPermissions(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code))
+	if err != nil {
+		return nil, err
+	}
+	response := make([]dtos.PermissionResponse, 0, len(permissions))
+	for _, permission := range permissions {
+		response = append(response, toPermissionResponse(permission))
+	}
+	return response, nil
+}

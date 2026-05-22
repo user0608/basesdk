@@ -202,6 +202,21 @@ func TenantGroupReplaceRolesHandler(usecase *usecases.TenantGroupsUsecase) httpa
 	}
 }
 
+func TenantGroupPermissionsHandler(usecase *usecases.TenantGroupsUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodGet,
+		Path:          "/api/v1/groups/:code/permissions",
+		RequiredPerms: []string{securitypermissions.SecurityGroupsPermissionsRead},
+		Handler: func(c echo.Context) error {
+			response, err := usecase.FindPermissions(c.Request().Context(), tenant(c), c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
+}
+
 func SystemTenantGroupsListHandler(usecase *usecases.TenantGroupsUsecase) httpapi.Route {
 	return &httpapi.SystemHandler{
 		Method: http.MethodGet,
@@ -420,6 +435,24 @@ func SystemTenantGroupReplaceRolesHandler(usecase *usecases.TenantGroupsUsecase)
 				return answer.Err(c, err)
 			}
 			return answer.Success(c)
+		},
+	}
+}
+
+func SystemTenantGroupPermissionsHandler(usecase *usecases.TenantGroupsUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{
+		Method: http.MethodGet,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/groups/:code/permissions",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			response, err := usecase.FindPermissions(c.Request().Context(), tenantCodigo, c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
 		},
 	}
 }

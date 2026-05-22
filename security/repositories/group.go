@@ -18,7 +18,30 @@ func NewGroupRepository(manager connection.StorageManager) *GroupRepository {
 
 func (r *GroupRepository) FindGroups(ctx context.Context, tenantCodigo string) ([]models.AppGroup, error) {
 	var groups []models.AppGroup
-	rs := r.manager.Conn(ctx).Where("tenant_codigo = ?", tenantCodigo).Order("code").Find(&groups)
+	rs := r.manager.Conn(ctx).Raw(`
+		select
+			g.*,
+			(
+				select count(*)
+				from user_group ug
+				where ug.tenant_codigo = g.tenant_codigo and ug.group_code = g.code
+			) as users_count,
+			(
+				select count(*)
+				from group_role gr
+				where gr.tenant_codigo = g.tenant_codigo and gr.group_code = g.code
+			) as roles_count,
+			(
+				select count(distinct rp.permission_code)
+				from group_role gr
+				join role r on r.tenant_codigo = gr.tenant_codigo and r.code = gr.role_code
+				join role_permission rp on rp.tenant_codigo = gr.tenant_codigo and rp.role_code = gr.role_code
+				where gr.tenant_codigo = g.tenant_codigo and gr.group_code = g.code and r.disabled = false and g.disabled = false
+			) as permissions_count
+		from app_group g
+		where g.tenant_codigo = ?
+		order by g.code
+	`, tenantCodigo).Scan(&groups)
 	if rs.Error != nil {
 		return nil, errs.Pgf(rs.Error)
 	}
@@ -28,9 +51,34 @@ func (r *GroupRepository) FindGroups(ctx context.Context, tenantCodigo string) (
 
 func (r *GroupRepository) FindGroup(ctx context.Context, tenantCodigo string, code string) (*models.AppGroup, error) {
 	var group models.AppGroup
-	rs := r.manager.Conn(ctx).Where("tenant_codigo = ? and code = ?", tenantCodigo, code).First(&group)
+	rs := r.manager.Conn(ctx).Raw(`
+		select
+			g.*,
+			(
+				select count(*)
+				from user_group ug
+				where ug.tenant_codigo = g.tenant_codigo and ug.group_code = g.code
+			) as users_count,
+			(
+				select count(*)
+				from group_role gr
+				where gr.tenant_codigo = g.tenant_codigo and gr.group_code = g.code
+			) as roles_count,
+			(
+				select count(distinct rp.permission_code)
+				from group_role gr
+				join role r on r.tenant_codigo = gr.tenant_codigo and r.code = gr.role_code
+				join role_permission rp on rp.tenant_codigo = gr.tenant_codigo and rp.role_code = gr.role_code
+				where gr.tenant_codigo = g.tenant_codigo and gr.group_code = g.code and r.disabled = false and g.disabled = false
+			) as permissions_count
+		from app_group g
+		where g.tenant_codigo = ? and g.code = ?
+	`, tenantCodigo, code).Scan(&group)
 	if rs.Error != nil {
 		return nil, errs.Pgf(rs.Error)
+	}
+	if rs.RowsAffected == 0 {
+		return nil, errs.NotFoundDirect("grupo no encontrado")
 	}
 
 	return &group, nil
@@ -153,4 +201,23 @@ func (r *GroupRepository) ReplaceGroupRoles(ctx context.Context, tenantCodigo st
 
 		return nil
 	})
+}
+
+func (r *GroupRepository) FindGroupPermissions(ctx context.Context, tenantCodigo string, groupCode string) ([]models.Permission, error) {
+	var permissions []models.Permission
+	rs := r.manager.Conn(ctx).Raw(`
+		select distinct p.code, p.description
+		from permission p
+		join role_permission rp on rp.permission_code = p.code
+		join role r on r.tenant_codigo = rp.tenant_codigo and r.code = rp.role_code
+		join group_role gr on gr.tenant_codigo = rp.tenant_codigo and gr.role_code = rp.role_code
+		join app_group g on g.tenant_codigo = gr.tenant_codigo and g.code = gr.group_code
+		where gr.tenant_codigo = ? and gr.group_code = ? and r.disabled = false and g.disabled = false
+		order by code
+	`, tenantCodigo, groupCode).Scan(&permissions)
+	if rs.Error != nil {
+		return nil, errs.Pgf(rs.Error)
+	}
+
+	return permissions, nil
 }

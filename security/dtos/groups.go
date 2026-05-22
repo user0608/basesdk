@@ -11,8 +11,11 @@ type UpdateGroupInput struct {
 }
 
 type GroupResponse struct {
-	TenantCodigo string  `json:"tenantCodigo"`
-	Code         string  `json:"code"`
-	Description  *string `json:"description"`
-	Disabled     bool    `json:"disabled"`
+	TenantCodigo     string  `json:"tenantCodigo"`
+	Code             string  `json:"code"`
+	Description      *string `json:"description"`
+	Disabled         bool    `json:"disabled"`
+	UsersCount       int64   `json:"usersCount"`
+	RolesCount       int64   `json:"rolesCount"`
+	PermissionsCount int64   `json:"permissionsCount"`
 }

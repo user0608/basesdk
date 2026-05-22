@@ -30,6 +30,7 @@ export type SelectFieldProps<TFormValues extends FieldValues, TOption extends Se
   onOpen?: () => void;
   columns?: ColumnDef<TOption, unknown>[];
   searchKeys?: readonly string[];
+  showValueColumn?: boolean;
 };
 
 export const SelectField = <TFormValues extends FieldValues, TOption extends SelectOption = SelectOption>({

@@ -6,6 +6,7 @@ import (
 	"basesdk/security/models"
 	"basesdk/security/repositories"
 	"context"
+	"slices"
 	"strings"
 	"time"
 )
@@ -59,22 +60,23 @@ func (u *SystemUsersUsecase) Create(ctx context.Context, input dtos.CreateSystem
 }
 
 func (u *SystemUsersUsecase) Update(ctx context.Context, username string, input dtos.UpdateSystemUserInput, updatedBy string) error {
+	username = strings.TrimSpace(username)
+	if input.Disabled {
+		if username == strings.TrimSpace(updatedBy) {
+			return errs.BadRequestDirect("no puedes deshabilitar tu propio usuario system")
+		}
+		if err := u.ensureActiveSystemUserRemains(ctx, []string{username}); err != nil {
+			return err
+		}
+	}
+
 	now := time.Now()
 	return u.repository.UpdateSystemUser(ctx, &models.SystemAccount{
-		Username:  strings.TrimSpace(username),
+		Username:  username,
 		Disabled:  input.Disabled,
 		UpdatedBy: &updatedBy,
 		UpdatedAt: &now,
 	})
-}
-
-func (u *SystemUsersUsecase) ChangePassword(ctx context.Context, username string, input dtos.ChangePasswordInput, updatedBy string) error {
-	user := &models.SystemAccount{}
-	if err := user.ChangePassword(input.Password); err != nil {
-		return err
-	}
-
-	return u.repository.ChangeSystemUserPassword(ctx, strings.TrimSpace(username), user.PasswordHash, updatedBy)
 }
 
 func (u *SystemUsersUsecase) Enable(ctx context.Context, usernames []string, updatedBy string) error {
@@ -88,12 +90,35 @@ func (u *SystemUsersUsecase) Disable(ctx context.Context, usernames []string, up
 	if len(usernames) == 0 {
 		return errs.BadRequestDirect("usuarios requeridos")
 	}
+	if slices.Contains(usernames, strings.TrimSpace(updatedBy)) {
+		return errs.BadRequestDirect("no puedes deshabilitar tu propio usuario system")
+	}
+	if err := u.ensureActiveSystemUserRemains(ctx, usernames); err != nil {
+		return err
+	}
 	return u.repository.SetSystemUsersDisabled(ctx, usernames, true, updatedBy)
 }
 
-func (u *SystemUsersUsecase) Delete(ctx context.Context, usernames []string) error {
+func (u *SystemUsersUsecase) Delete(ctx context.Context, usernames []string, deletedBy string) error {
 	if len(usernames) == 0 {
 		return errs.BadRequestDirect("usuarios requeridos")
 	}
+	if slices.Contains(usernames, strings.TrimSpace(deletedBy)) {
+		return errs.BadRequestDirect("no puedes eliminar tu propio usuario system")
+	}
+	if err := u.ensureActiveSystemUserRemains(ctx, usernames); err != nil {
+		return err
+	}
 	return u.repository.DeleteSystemUsers(ctx, usernames)
+}
+
+func (u *SystemUsersUsecase) ensureActiveSystemUserRemains(ctx context.Context, excludedUsernames []string) error {
+	count, err := u.repository.CountActiveSystemUsersExcluding(ctx, excludedUsernames)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return errs.BadRequestDirect("debe quedar al menos un usuario system activo")
+	}
+	return nil
 }

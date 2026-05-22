@@ -62,8 +62,10 @@ export const TenantLoginPage = ({
             setSubmitError(null);
 
             try {
-              await loginTenant(values);
-              const nextPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? redirectTo;
+              const session = await loginTenant(values);
+              const nextPath = session.mustChangePassword
+                ? "/change-password"
+                : (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? redirectTo;
               navigate(nextPath, { replace: true });
             } catch (error) {
               setSubmitError(error instanceof Error ? error.message : "No se pudo iniciar sesion");

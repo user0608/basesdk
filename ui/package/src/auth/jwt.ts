@@ -25,7 +25,7 @@ const claimsExpiration = (claims: JwtClaims) => {
   return new Date(claims.exp * 1000).toISOString();
 };
 
-export const toTenantSession = (token: string, claims: JwtClaims, permissions: string[]): TenantSession => {
+export const toTenantSession = (token: string, claims: JwtClaims, permissions: string[], mustChangePassword = false): TenantSession => {
   if (claims.type !== "tenant" || !claims.tenant) {
     throw new Error("Token tenant invalido");
   }
@@ -38,6 +38,7 @@ export const toTenantSession = (token: string, claims: JwtClaims, permissions: s
     timeZone: claims.time_zone ?? "UTC",
     expiresAt: claimsExpiration(claims),
     permissions,
+    mustChangePassword,
   };
 };
 

@@ -27,10 +27,8 @@ func TestTenantUserManagementE2E(t *testing.T) {
 
 	createUser := executeJSONRequest(t, server, http.MethodPost, "/api/v1/users", `{
 		"username": "ana",
-		"email": "ana@local",
 		"fullName": "Ana",
-		"password": "secret123",
-		"emailVerified": true
+		"password": "secret123"
 	}`)
 	require.Equal(t, http.StatusCreated, createUser.Code)
 
@@ -76,6 +74,15 @@ func TestTenantRoleGroupAndPermissionsE2E(t *testing.T) {
 	replaceGroupRoles := executeJSONRequest(t, server, http.MethodPut, "/api/v1/groups/ENGINEERING/roles", `{"codes": ["DEV"]}`)
 	require.Equal(t, http.StatusOK, replaceGroupRoles.Code)
 
+	replaceRolePermissions := executeJSONRequest(t, server, http.MethodPut, "/api/v1/roles/DEV/permissions", `{"codes": ["security.users.read"]}`)
+	require.Equal(t, http.StatusOK, replaceRolePermissions.Code)
+
+	replaceUserRoles := executeJSONRequest(t, server, http.MethodPut, "/api/v1/users/kevin/roles", `{"codes": ["DEV"]}`)
+	require.Equal(t, http.StatusOK, replaceUserRoles.Code)
+
+	replaceUserGroups := executeJSONRequest(t, server, http.MethodPut, "/api/v1/users/kevin/groups", `{"codes": ["ENGINEERING"]}`)
+	require.Equal(t, http.StatusOK, replaceUserGroups.Code)
+
 	groupUsers := executeJSONRequest(t, server, http.MethodGet, "/api/v1/groups/ENGINEERING/users", ``)
 	require.Equal(t, http.StatusOK, groupUsers.Code)
 	requireJSONArrayLen(t, groupUsers, 1)
@@ -84,11 +91,47 @@ func TestTenantRoleGroupAndPermissionsE2E(t *testing.T) {
 	require.Equal(t, http.StatusOK, groupRoles.Code)
 	requireJSONArrayLen(t, groupRoles, 1)
 
+	groupPermissions := executeJSONRequest(t, server, http.MethodGet, "/api/v1/groups/ENGINEERING/permissions", ``)
+	require.Equal(t, http.StatusOK, groupPermissions.Code)
+	requireJSONArrayLen(t, groupPermissions, 1)
+
+	rolePermissions := executeJSONRequest(t, server, http.MethodGet, "/api/v1/roles/DEV/permissions", ``)
+	require.Equal(t, http.StatusOK, rolePermissions.Code)
+	requireJSONArrayLen(t, rolePermissions, 1)
+
+	userRoles := executeJSONRequest(t, server, http.MethodGet, "/api/v1/users/kevin/roles", ``)
+	require.Equal(t, http.StatusOK, userRoles.Code)
+	requireJSONArrayLen(t, userRoles, 1)
+
+	userGroups := executeJSONRequest(t, server, http.MethodGet, "/api/v1/users/kevin/groups", ``)
+	require.Equal(t, http.StatusOK, userGroups.Code)
+	requireJSONArrayLen(t, userGroups, 1)
+
+	roleUsers := executeJSONRequest(t, server, http.MethodGet, "/api/v1/roles/DEV/users", ``)
+	require.Equal(t, http.StatusOK, roleUsers.Code)
+	requireJSONArrayLen(t, roleUsers, 1)
+
+	roleGroups := executeJSONRequest(t, server, http.MethodGet, "/api/v1/roles/DEV/groups", ``)
+	require.Equal(t, http.StatusOK, roleGroups.Code)
+	requireJSONArrayLen(t, roleGroups, 1)
+
 	permissions := executeJSONRequest(t, server, http.MethodGet, "/api/v1/permissions", ``)
 	require.Equal(t, http.StatusOK, permissions.Code)
 
 	userPermissions := executeJSONRequest(t, server, http.MethodGet, "/api/v1/me/permissions", ``)
 	require.Equal(t, http.StatusOK, userPermissions.Code)
+
+	permissionRoles := executeJSONRequest(t, server, http.MethodGet, "/api/v1/permissions/security.users.read/roles", ``)
+	require.Equal(t, http.StatusOK, permissionRoles.Code)
+	requireJSONArrayLen(t, permissionRoles, 1)
+
+	permissionGroups := executeJSONRequest(t, server, http.MethodGet, "/api/v1/permissions/security.users.read/groups", ``)
+	require.Equal(t, http.StatusOK, permissionGroups.Code)
+	requireJSONArrayLen(t, permissionGroups, 1)
+
+	permissionUsers := executeJSONRequest(t, server, http.MethodGet, "/api/v1/permissions/security.users.read/users", ``)
+	require.Equal(t, http.StatusOK, permissionUsers.Code)
+	requireJSONArrayLen(t, permissionUsers, 1)
 }
 
 func newUserManagementTestServer(t *testing.T) *httptest.Server {
@@ -118,6 +161,10 @@ func newUserManagementTestServer(t *testing.T) *httptest.Server {
 			handlers.TenantUsersDisableHandler(tenantUsersUsecase),
 			handlers.TenantUsersDeleteHandler(tenantUsersUsecase),
 			handlers.TenantUserPermissionsHandler(tenantUsersUsecase),
+			handlers.TenantUserRolesHandler(tenantUsersUsecase),
+			handlers.TenantUserReplaceRolesHandler(tenantUsersUsecase),
+			handlers.TenantUserGroupsHandler(tenantUsersUsecase),
+			handlers.TenantUserReplaceGroupsHandler(tenantUsersUsecase),
 			handlers.TenantMeHandler(tenantUsersUsecase),
 			handlers.TenantMePermissionsHandler(tenantUsersUsecase),
 			handlers.TenantRolesListHandler(tenantRolesUsecase),
@@ -129,6 +176,10 @@ func newUserManagementTestServer(t *testing.T) *httptest.Server {
 			handlers.TenantRolesDeleteHandler(tenantRolesUsecase),
 			handlers.TenantRolePermissionsHandler(tenantRolesUsecase),
 			handlers.TenantRoleReplacePermissionsHandler(tenantRolesUsecase),
+			handlers.TenantRoleUsersHandler(tenantRolesUsecase),
+			handlers.TenantRoleReplaceUsersHandler(tenantRolesUsecase),
+			handlers.TenantRoleGroupsHandler(tenantRolesUsecase),
+			handlers.TenantRoleReplaceGroupsHandler(tenantRolesUsecase),
 			handlers.TenantGroupsListHandler(tenantGroupsUsecase),
 			handlers.TenantGroupCreateHandler(tenantGroupsUsecase),
 			handlers.TenantGroupFindHandler(tenantGroupsUsecase),
@@ -140,8 +191,12 @@ func newUserManagementTestServer(t *testing.T) *httptest.Server {
 			handlers.TenantGroupReplaceUsersHandler(tenantGroupsUsecase),
 			handlers.TenantGroupRolesHandler(tenantGroupsUsecase),
 			handlers.TenantGroupReplaceRolesHandler(tenantGroupsUsecase),
+			handlers.TenantGroupPermissionsHandler(tenantGroupsUsecase),
 			handlers.TenantPermissionsListHandler(permissionsUsecase),
 			handlers.TenantPermissionFindHandler(permissionsUsecase),
+			handlers.TenantPermissionRolesHandler(permissionsUsecase),
+			handlers.TenantPermissionGroupsHandler(permissionsUsecase),
+			handlers.TenantPermissionUsersHandler(permissionsUsecase),
 		},
 		auth.NewTestSecurityMiddleware(),
 		nil,

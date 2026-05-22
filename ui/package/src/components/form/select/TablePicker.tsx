@@ -32,11 +32,12 @@ export type TablePickerProps<TFormValues extends FieldValues, TOption extends Se
   readOnly?: boolean;
   loading?: boolean;
   pageSize?: number;
+  showValueColumn?: boolean;
   onChange?: (value: string | string[]) => void;
   onRefresh?: () => Promise<void> | void;
 };
 
-const defaultSearchKeys = ["label"] as const;
+const defaultSearchKeys = ["label", "value"] as const;
 
 export const TablePicker = <TFormValues extends FieldValues, TOption extends SelectOption = SelectOption>({
   form,
@@ -52,6 +53,7 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
   readOnly,
   loading = false,
   pageSize = 5,
+  showValueColumn = false,
   onChange,
   onRefresh,
 }: TablePickerProps<TFormValues, TOption>) => {
@@ -151,8 +153,15 @@ export const TablePicker = <TFormValues extends FieldValues, TOption extends Sel
       cell: ({ row }) => <span className="block truncate">{row.original.label}</span>,
     };
 
-    return [selectedColumn, labelColumn, ...(extraColumns ?? [])];
-  }, [extraColumns, multiple, readOnly, selectedValues]);
+    const valueColumn: ColumnDef<TOption, unknown> = {
+      accessorKey: "value",
+      header: "Codigo",
+      cell: ({ row }) => <span className="block truncate text-xs text-ui-text-soft">{row.original.value}</span>,
+      enableGlobalFilter: false,
+    };
+
+    return [selectedColumn, labelColumn, ...(showValueColumn ? [valueColumn] : []), ...(extraColumns ?? [])];
+  }, [extraColumns, multiple, readOnly, selectedValues, showValueColumn]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({

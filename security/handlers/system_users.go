@@ -77,26 +77,6 @@ func SystemUserUpdateHandler(usecase *usecases.SystemUsersUsecase) httpapi.Route
 	}
 }
 
-func SystemUserPasswordHandler(usecase *usecases.SystemUsersUsecase) httpapi.Route {
-	return &httpapi.SystemHandler{
-		Method: http.MethodPatch,
-		Path:   "/api/v1/system/users/:username/password",
-		Handler: func(c echo.Context) error {
-			var payload dtos.ChangePasswordInput
-			if err := binds.JSON(c, &payload); err != nil {
-				return answer.Err(c, err)
-			}
-			if err := kcheck.Valid(payload); err != nil {
-				return answer.Err(c, err)
-			}
-			if err := usecase.ChangePassword(c.Request().Context(), c.Param("username"), payload, actor(c)); err != nil {
-				return answer.Err(c, err)
-			}
-			return answer.Success(c)
-		},
-	}
-}
-
 func SystemUsersEnableHandler(usecase *usecases.SystemUsersUsecase) httpapi.Route {
 	return &httpapi.SystemHandler{
 		Method: http.MethodPatch,
@@ -140,7 +120,7 @@ func SystemUsersDeleteHandler(usecase *usecases.SystemUsersUsecase) httpapi.Rout
 			if err != nil {
 				return answer.Err(c, err)
 			}
-			if err := usecase.Delete(c.Request().Context(), values); err != nil {
+			if err := usecase.Delete(c.Request().Context(), values, actor(c)); err != nil {
 				return answer.Err(c, err)
 			}
 			return answer.Success(c)

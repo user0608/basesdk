@@ -40,6 +40,36 @@ func TenantPermissionFindHandler(usecase *usecases.PermissionsUsecase) httpapi.R
 	}
 }
 
+func TenantPermissionRolesHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{Method: http.MethodGet, Path: "/api/v1/permissions/:code/roles", RequiredPerms: []string{securitypermissions.SecurityPermissionsRead}, Handler: func(c echo.Context) error {
+		response, err := usecase.FindRoles(c.Request().Context(), c.Param("code"))
+		if err != nil {
+			return answer.Err(c, err)
+		}
+		return answer.Ok(c, response)
+	}}
+}
+
+func TenantPermissionGroupsHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{Method: http.MethodGet, Path: "/api/v1/permissions/:code/groups", RequiredPerms: []string{securitypermissions.SecurityPermissionsRead}, Handler: func(c echo.Context) error {
+		response, err := usecase.FindGroups(c.Request().Context(), c.Param("code"))
+		if err != nil {
+			return answer.Err(c, err)
+		}
+		return answer.Ok(c, response)
+	}}
+}
+
+func TenantPermissionUsersHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{Method: http.MethodGet, Path: "/api/v1/permissions/:code/users", RequiredPerms: []string{securitypermissions.SecurityPermissionsRead}, Handler: func(c echo.Context) error {
+		response, err := usecase.FindUsers(c.Request().Context(), c.Param("code"))
+		if err != nil {
+			return answer.Err(c, err)
+		}
+		return answer.Ok(c, response)
+	}}
+}
+
 func SystemPermissionsListHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
 	return &httpapi.SystemHandler{
 		Method: http.MethodGet,
@@ -66,4 +96,34 @@ func SystemPermissionFindHandler(usecase *usecases.PermissionsUsecase) httpapi.R
 			return answer.Ok(c, response)
 		},
 	}
+}
+
+func SystemPermissionRolesHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{Method: http.MethodGet, Path: "/api/v1/system/permissions/:code/roles", Handler: func(c echo.Context) error {
+		response, err := usecase.FindRoles(c.Request().Context(), c.Param("code"))
+		if err != nil {
+			return answer.Err(c, err)
+		}
+		return answer.Ok(c, response)
+	}}
+}
+
+func SystemPermissionGroupsHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{Method: http.MethodGet, Path: "/api/v1/system/permissions/:code/groups", Handler: func(c echo.Context) error {
+		response, err := usecase.FindGroups(c.Request().Context(), c.Param("code"))
+		if err != nil {
+			return answer.Err(c, err)
+		}
+		return answer.Ok(c, response)
+	}}
+}
+
+func SystemPermissionUsersHandler(usecase *usecases.PermissionsUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{Method: http.MethodGet, Path: "/api/v1/system/permissions/:code/users", Handler: func(c echo.Context) error {
+		response, err := usecase.FindUsers(c.Request().Context(), c.Param("code"))
+		if err != nil {
+			return answer.Err(c, err)
+		}
+		return answer.Ok(c, response)
+	}}
 }

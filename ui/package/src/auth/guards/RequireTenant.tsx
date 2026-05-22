@@ -10,5 +10,13 @@ export const RequireTenant = ({ redirectTo = "/login" }: { redirectTo?: string }
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
 
+  if (tenantSession.mustChangePassword && location.pathname !== "/change-password") {
+    return <Navigate to="/change-password" replace state={{ from: location }} />;
+  }
+
+  if (!tenantSession.mustChangePassword && location.pathname === "/change-password") {
+    return <Navigate to="/app" replace />;
+  }
+
   return <Outlet />;
 };

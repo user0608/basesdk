@@ -5,7 +5,14 @@ export type MenuIcon = ComponentType<{ className?: string }> | string;
 
 export type ComponentRegistry = Record<string, ComponentType<any>>;
 
+export type ApplicationRegistry = {
+  pages: ComponentRegistry;
+  forms?: ComponentRegistry;
+};
+
 export type ComponentId<TRegistry extends ComponentRegistry> = keyof TRegistry & string;
+export type PageId<TRegistry extends ApplicationRegistry> = keyof TRegistry["pages"] & string;
+export type FormId<TRegistry extends ApplicationRegistry> = keyof NonNullable<TRegistry["forms"]> & string;
 
 export type OperationNode<TComponentId extends string, TPermission extends string = PermissionCode> = {
   id: string;
@@ -72,6 +79,8 @@ export type WorkspaceLayoutProps<TComponentId extends string, TPermission extend
   permissions?: readonly TPermission[] | null;
   title?: string;
   subtitle?: string;
+  homePath?: string;
+  breadcrumbs?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 };

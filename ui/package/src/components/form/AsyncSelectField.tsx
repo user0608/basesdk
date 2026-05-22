@@ -30,6 +30,7 @@ export type AsyncSelectFieldProps<TFormValues extends FieldValues, TOption exten
   onRefresh?: () => Promise<void> | void;
   columns?: ColumnDef<TOption, unknown>[];
   searchKeys?: readonly string[];
+  showValueColumn?: boolean;
   loadOnMount?: boolean;
 };
 
@@ -54,6 +55,7 @@ export const AsyncSelectField = <TFormValues extends FieldValues, TOption extend
   onRefresh,
   columns,
   searchKeys,
+  showValueColumn,
   loadOnMount,
 }: AsyncSelectFieldProps<TFormValues, TOption>) => {
   const value = useWatch({
@@ -102,6 +104,7 @@ export const AsyncSelectField = <TFormValues extends FieldValues, TOption extend
       onOpen={handleOpen}
       columns={columns}
       searchKeys={searchKeys}
+      showValueColumn={showValueColumn}
     />
   );
 };

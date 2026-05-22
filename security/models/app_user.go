@@ -16,6 +16,9 @@ type Tenant struct {
 	MaxActiveUsers int
 	Disabled       bool
 	ExpiresAt      *time.Time
+	UsersCount     int64 `gorm:"->"`
+	RolesCount     int64 `gorm:"->"`
+	GroupsCount    int64 `gorm:"->"`
 	CreatedBy      string
 	CreatedAt      time.Time
 	UpdatedBy      *string
@@ -41,13 +44,14 @@ func (t *Tenant) ValidateLoginAccess(now time.Time) error {
 type AppUser struct {
 	TenantCodigo       string `gorm:"primaryKey"`
 	Username           string `gorm:"primaryKey"`
-	Email              string
 	FullName           *string
 	PasswordHash       *string
-	EmailVerified      bool
 	MustChangePassword bool
 	LastLoginAt        *time.Time
 	Disabled           bool
+	RolesCount         int64 `gorm:"->"`
+	GroupsCount        int64 `gorm:"->"`
+	PermissionsCount   int64 `gorm:"->"`
 	CreatedBy          string
 	CreatedAt          time.Time
 	UpdatedBy          *string

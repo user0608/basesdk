@@ -20,6 +20,8 @@ export type TextInputProps<TFormValues extends FieldValues> = {
   onChange?: (value: string) => void;
   icon?: IconType;
   small?: boolean;
+  multiline?: boolean;
+  rows?: number;
   onIconClick?: () => Promise<void> | void;
   onRefresh?: () => Promise<void> | void;
 };
@@ -37,6 +39,8 @@ export const TextInput = <TFormValues extends FieldValues>({
   onChange,
   icon,
   small,
+  multiline,
+  rows = 4,
   onIconClick,
   onRefresh,
 }: TextInputProps<TFormValues>) => {
@@ -59,28 +63,53 @@ export const TextInput = <TFormValues extends FieldValues>({
       error={error?.message ? String(error.message) : undefined}
     >
       <div className="relative">
-        <input
-          id={id}
-          name={controller.field.name}
-          type={type}
-          value={String(controller.field.value ?? "")}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          onBlur={() => controller.field.onBlur()}
-          onChange={(event) => {
-            const value = event.target.value;
+        {multiline ? (
+          <textarea
+            id={id}
+            name={controller.field.name}
+            value={String(controller.field.value ?? "")}
+            placeholder={placeholder}
+            readOnly={readOnly}
+            rows={rows}
+            onBlur={() => controller.field.onBlur()}
+            onChange={(event) => {
+              const value = event.target.value;
 
-            controller.field.onChange(value);
-            onChange?.(value);
-          }}
-          className={getFieldClassName({
-            small,
-            error: Boolean(error),
-            className,
-            withRightIcon: Boolean(Icon),
-            readOnly,
-          })}
-        />
+              controller.field.onChange(value);
+              onChange?.(value);
+            }}
+            className={getFieldClassName({
+              small,
+              error: Boolean(error),
+              className: ["resize-y py-2", className].filter(Boolean).join(" "),
+              withRightIcon: Boolean(Icon),
+              readOnly,
+            })}
+          />
+        ) : (
+          <input
+            id={id}
+            name={controller.field.name}
+            type={type}
+            value={String(controller.field.value ?? "")}
+            placeholder={placeholder}
+            readOnly={readOnly}
+            onBlur={() => controller.field.onBlur()}
+            onChange={(event) => {
+              const value = event.target.value;
+
+              controller.field.onChange(value);
+              onChange?.(value);
+            }}
+            className={getFieldClassName({
+              small,
+              error: Boolean(error),
+              className,
+              withRightIcon: Boolean(Icon),
+              readOnly,
+            })}
+          />
+        )}
 
         {Icon && (
           <button

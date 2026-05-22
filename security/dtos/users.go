@@ -26,17 +26,13 @@ type SystemUserResponse struct {
 
 type CreateTenantUserInput struct {
 	Username           string  `json:"username" chk:"nonil"`
-	Email              string  `json:"email" chk:"nonil"`
 	FullName           *string `json:"fullName"`
 	Password           string  `json:"password" chk:"nonil"`
-	EmailVerified      bool    `json:"emailVerified"`
 	MustChangePassword bool    `json:"mustChangePassword"`
 }
 
 type UpdateTenantUserInput struct {
-	Email              string  `json:"email" chk:"nonil"`
 	FullName           *string `json:"fullName"`
-	EmailVerified      bool    `json:"emailVerified"`
 	MustChangePassword bool    `json:"mustChangePassword"`
 	Disabled           bool    `json:"disabled"`
 }
@@ -44,12 +40,13 @@ type UpdateTenantUserInput struct {
 type TenantUserResponse struct {
 	TenantCodigo       string     `json:"tenantCodigo"`
 	Username           string     `json:"username"`
-	Email              string     `json:"email"`
 	FullName           *string    `json:"fullName"`
-	EmailVerified      bool       `json:"emailVerified"`
 	MustChangePassword bool       `json:"mustChangePassword"`
 	LastLoginAt        *time.Time `json:"lastLoginAt"`
 	Disabled           bool       `json:"disabled"`
+	RolesCount         int64      `json:"rolesCount"`
+	GroupsCount        int64      `json:"groupsCount"`
+	PermissionsCount   int64      `json:"permissionsCount"`
 }
 
 type UserPermissionsResponse struct {

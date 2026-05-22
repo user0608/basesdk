@@ -169,6 +169,72 @@ func TenantRoleReplacePermissionsHandler(usecase *usecases.TenantRolesUsecase) h
 	}
 }
 
+func TenantRoleUsersHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodGet,
+		Path:          "/api/v1/roles/:code/users",
+		RequiredPerms: []string{securitypermissions.SecurityRolesUsersRead},
+		Handler: func(c echo.Context) error {
+			response, err := usecase.FindUsers(c.Request().Context(), tenant(c), c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
+}
+
+func TenantRoleReplaceUsersHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPut,
+		Path:          "/api/v1/roles/:code/users",
+		RequiredPerms: []string{securitypermissions.SecurityRolesUsersReplace},
+		Handler: func(c echo.Context) error {
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.ReplaceUsers(c.Request().Context(), tenant(c), c.Param("code"), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
+}
+
+func TenantRoleGroupsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodGet,
+		Path:          "/api/v1/roles/:code/groups",
+		RequiredPerms: []string{securitypermissions.SecurityRolesGroupsRead},
+		Handler: func(c echo.Context) error {
+			response, err := usecase.FindGroups(c.Request().Context(), tenant(c), c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
+}
+
+func TenantRoleReplaceGroupsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.TenantHandler{
+		Method:        http.MethodPut,
+		Path:          "/api/v1/roles/:code/groups",
+		RequiredPerms: []string{securitypermissions.SecurityRolesGroupsReplace},
+		Handler: func(c echo.Context) error {
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.ReplaceGroups(c.Request().Context(), tenant(c), c.Param("code"), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
+}
+
 func SystemTenantRolesListHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
 	return &httpapi.SystemHandler{
 		Method: http.MethodGet,
@@ -345,6 +411,84 @@ func SystemTenantRoleReplacePermissionsHandler(usecase *usecases.TenantRolesUsec
 				return answer.Err(c, err)
 			}
 			if err := usecase.ReplacePermissions(c.Request().Context(), tenantCodigo, c.Param("code"), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
+}
+
+func SystemTenantRoleUsersHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{
+		Method: http.MethodGet,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code/users",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			response, err := usecase.FindUsers(c.Request().Context(), tenantCodigo, c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
+}
+
+func SystemTenantRoleReplaceUsersHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{
+		Method: http.MethodPut,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code/users",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.ReplaceUsers(c.Request().Context(), tenantCodigo, c.Param("code"), values, actor(c)); err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Success(c)
+		},
+	}
+}
+
+func SystemTenantRoleGroupsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{
+		Method: http.MethodGet,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code/groups",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			response, err := usecase.FindGroups(c.Request().Context(), tenantCodigo, c.Param("code"))
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			return answer.Ok(c, response)
+		},
+	}
+}
+
+func SystemTenantRoleReplaceGroupsHandler(usecase *usecases.TenantRolesUsecase) httpapi.Route {
+	return &httpapi.SystemHandler{
+		Method: http.MethodPut,
+		Path:   "/api/v1/system/tenants/:tenantCodigo/roles/:code/groups",
+		Handler: func(c echo.Context) error {
+			tenantCodigo, err := tenantParam(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			values, err := requestStrings(c)
+			if err != nil {
+				return answer.Err(c, err)
+			}
+			if err := usecase.ReplaceGroups(c.Request().Context(), tenantCodigo, c.Param("code"), values, actor(c)); err != nil {
 				return answer.Err(c, err)
 			}
 			return answer.Success(c)

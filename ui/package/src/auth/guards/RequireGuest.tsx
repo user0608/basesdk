@@ -17,6 +17,7 @@ export const RequireGuest = ({
   }
 
   if (scope === "tenant" && tenantSession) {
+    if (tenantSession.mustChangePassword) return <Navigate to="/change-password" replace />;
     return <Navigate to={redirectTo ?? "/app"} replace />;
   }
 

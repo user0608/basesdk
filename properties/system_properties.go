@@ -16,7 +16,7 @@ const notFoundFormat = "system property '%s' not found"
 type Property struct {
 	Key         string  `json:"key" gorm:"primaryKey"`
 	Value       string  `json:"value"`
-	DataType    string  `json:"data_type"`
+	DataType    string  `json:"dataType"`
 	Description *string `json:"description"`
 }
 

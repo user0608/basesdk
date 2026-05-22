@@ -8,6 +8,7 @@ import (
 	"basesdk/connection"
 	"basesdk/httpapi"
 	"basesdk/properties"
+	propertieshandlers "basesdk/properties/handlers"
 	"basesdk/security/handlers"
 	"basesdk/security/repositories"
 	"basesdk/security/usecases"
@@ -93,6 +94,16 @@ func propertiesModule() fx.Option {
 		fx.Provide(
 			properties.NewSystemProperties,
 			properties.NewTenantSystemProperties,
+			httpapi.AsRoute(propertieshandlers.SystemPropertiesListHandler),
+			httpapi.AsRoute(propertieshandlers.SystemPropertyCreateHandler),
+			httpapi.AsRoute(propertieshandlers.SystemPropertyFindHandler),
+			httpapi.AsRoute(propertieshandlers.SystemPropertyUpdateHandler),
+			httpapi.AsRoute(propertieshandlers.SystemPropertyDeleteHandler),
+			httpapi.AsRoute(propertieshandlers.SystemTenantPropertiesListHandler),
+			httpapi.AsRoute(propertieshandlers.SystemTenantPropertyCreateHandler),
+			httpapi.AsRoute(propertieshandlers.SystemTenantPropertyFindHandler),
+			httpapi.AsRoute(propertieshandlers.SystemTenantPropertyUpdateHandler),
+			httpapi.AsRoute(propertieshandlers.SystemTenantPropertyDeleteHandler),
 		),
 	)
 }
@@ -110,6 +121,7 @@ func securityProviders() []any {
 		repositories.NewRoleRepository,
 		repositories.NewGroupRepository,
 		repositories.NewPermissionRepository,
+		repositories.NewTenantRepository,
 		fx.Annotate(
 			usecases.NewAuthorizationUsecase,
 			fx.As(new(auth.PermissionValidator)),
@@ -121,6 +133,7 @@ func securityProviders() []any {
 		usecases.NewTenantUsersUsecase,
 		usecases.NewTenantRolesUsecase,
 		usecases.NewTenantGroupsUsecase,
+		usecases.NewTenantsUsecase,
 		usecases.NewPermissionsUsecase,
 		httpapi.AsRoute(handlers.SystemUserHandler),
 		httpapi.AsRoute(handlers.TenantUserHandler),
@@ -138,10 +151,15 @@ func systemRoutes() []any {
 		httpapi.AsRoute(handlers.SystemUserCreateHandler),
 		httpapi.AsRoute(handlers.SystemUserFindHandler),
 		httpapi.AsRoute(handlers.SystemUserUpdateHandler),
-		httpapi.AsRoute(handlers.SystemUserPasswordHandler),
 		httpapi.AsRoute(handlers.SystemUsersEnableHandler),
 		httpapi.AsRoute(handlers.SystemUsersDisableHandler),
 		httpapi.AsRoute(handlers.SystemUsersDeleteHandler),
+		httpapi.AsRoute(handlers.SystemTenantsListHandler),
+		httpapi.AsRoute(handlers.SystemTenantCreateHandler),
+		httpapi.AsRoute(handlers.SystemTenantFindHandler),
+		httpapi.AsRoute(handlers.SystemTenantUpdateHandler),
+		httpapi.AsRoute(handlers.SystemTenantsEnableHandler),
+		httpapi.AsRoute(handlers.SystemTenantsDisableHandler),
 		httpapi.AsRoute(handlers.SystemTenantUsersListHandler),
 		httpapi.AsRoute(handlers.SystemTenantUserCreateHandler),
 		httpapi.AsRoute(handlers.SystemTenantUserFindHandler),
@@ -151,6 +169,10 @@ func systemRoutes() []any {
 		httpapi.AsRoute(handlers.SystemTenantUsersDisableHandler),
 		httpapi.AsRoute(handlers.SystemTenantUsersDeleteHandler),
 		httpapi.AsRoute(handlers.SystemTenantUserPermissionsHandler),
+		httpapi.AsRoute(handlers.SystemTenantUserRolesHandler),
+		httpapi.AsRoute(handlers.SystemTenantUserReplaceRolesHandler),
+		httpapi.AsRoute(handlers.SystemTenantUserGroupsHandler),
+		httpapi.AsRoute(handlers.SystemTenantUserReplaceGroupsHandler),
 		httpapi.AsRoute(handlers.SystemTenantRolesListHandler),
 		httpapi.AsRoute(handlers.SystemTenantRoleCreateHandler),
 		httpapi.AsRoute(handlers.SystemTenantRoleFindHandler),
@@ -160,6 +182,10 @@ func systemRoutes() []any {
 		httpapi.AsRoute(handlers.SystemTenantRolesDeleteHandler),
 		httpapi.AsRoute(handlers.SystemTenantRolePermissionsHandler),
 		httpapi.AsRoute(handlers.SystemTenantRoleReplacePermissionsHandler),
+		httpapi.AsRoute(handlers.SystemTenantRoleUsersHandler),
+		httpapi.AsRoute(handlers.SystemTenantRoleReplaceUsersHandler),
+		httpapi.AsRoute(handlers.SystemTenantRoleGroupsHandler),
+		httpapi.AsRoute(handlers.SystemTenantRoleReplaceGroupsHandler),
 		httpapi.AsRoute(handlers.SystemTenantGroupsListHandler),
 		httpapi.AsRoute(handlers.SystemTenantGroupCreateHandler),
 		httpapi.AsRoute(handlers.SystemTenantGroupFindHandler),
@@ -171,8 +197,12 @@ func systemRoutes() []any {
 		httpapi.AsRoute(handlers.SystemTenantGroupReplaceUsersHandler),
 		httpapi.AsRoute(handlers.SystemTenantGroupRolesHandler),
 		httpapi.AsRoute(handlers.SystemTenantGroupReplaceRolesHandler),
+		httpapi.AsRoute(handlers.SystemTenantGroupPermissionsHandler),
 		httpapi.AsRoute(handlers.SystemPermissionsListHandler),
 		httpapi.AsRoute(handlers.SystemPermissionFindHandler),
+		httpapi.AsRoute(handlers.SystemPermissionRolesHandler),
+		httpapi.AsRoute(handlers.SystemPermissionGroupsHandler),
+		httpapi.AsRoute(handlers.SystemPermissionUsersHandler),
 	}
 }
 
@@ -187,6 +217,10 @@ func tenantRoutes() []any {
 		httpapi.AsRoute(handlers.TenantUsersDisableHandler),
 		httpapi.AsRoute(handlers.TenantUsersDeleteHandler),
 		httpapi.AsRoute(handlers.TenantUserPermissionsHandler),
+		httpapi.AsRoute(handlers.TenantUserRolesHandler),
+		httpapi.AsRoute(handlers.TenantUserReplaceRolesHandler),
+		httpapi.AsRoute(handlers.TenantUserGroupsHandler),
+		httpapi.AsRoute(handlers.TenantUserReplaceGroupsHandler),
 		httpapi.AsRoute(handlers.TenantRolesListHandler),
 		httpapi.AsRoute(handlers.TenantRoleCreateHandler),
 		httpapi.AsRoute(handlers.TenantRoleFindHandler),
@@ -196,6 +230,10 @@ func tenantRoutes() []any {
 		httpapi.AsRoute(handlers.TenantRolesDeleteHandler),
 		httpapi.AsRoute(handlers.TenantRolePermissionsHandler),
 		httpapi.AsRoute(handlers.TenantRoleReplacePermissionsHandler),
+		httpapi.AsRoute(handlers.TenantRoleUsersHandler),
+		httpapi.AsRoute(handlers.TenantRoleReplaceUsersHandler),
+		httpapi.AsRoute(handlers.TenantRoleGroupsHandler),
+		httpapi.AsRoute(handlers.TenantRoleReplaceGroupsHandler),
 		httpapi.AsRoute(handlers.TenantGroupsListHandler),
 		httpapi.AsRoute(handlers.TenantGroupCreateHandler),
 		httpapi.AsRoute(handlers.TenantGroupFindHandler),
@@ -207,8 +245,12 @@ func tenantRoutes() []any {
 		httpapi.AsRoute(handlers.TenantGroupReplaceUsersHandler),
 		httpapi.AsRoute(handlers.TenantGroupRolesHandler),
 		httpapi.AsRoute(handlers.TenantGroupReplaceRolesHandler),
+		httpapi.AsRoute(handlers.TenantGroupPermissionsHandler),
 		httpapi.AsRoute(handlers.TenantPermissionsListHandler),
 		httpapi.AsRoute(handlers.TenantPermissionFindHandler),
+		httpapi.AsRoute(handlers.TenantPermissionRolesHandler),
+		httpapi.AsRoute(handlers.TenantPermissionGroupsHandler),
+		httpapi.AsRoute(handlers.TenantPermissionUsersHandler),
 		httpapi.AsRoute(handlers.TenantMeHandler),
 		httpapi.AsRoute(handlers.TenantMePasswordHandler),
 		httpapi.AsRoute(handlers.TenantMePermissionsHandler),

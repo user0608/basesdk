@@ -55,10 +55,8 @@ func seedAuthorizationUser(t *testing.T, storage connection.StorageManager) {
 		insert into app_user (
 			tenant_codigo,
 			username,
-			email,
 			full_name,
 			password_hash,
-			email_verified,
 			must_change_password,
 			last_login_at,
 			disabled,
@@ -68,10 +66,8 @@ func seedAuthorizationUser(t *testing.T, storage connection.StorageManager) {
 		values (
 			'tenant_default',
 			'editor',
-			'editor@local',
 			'Editor',
 			null,
-			true,
 			false,
 			null,
 			false,
@@ -107,10 +103,8 @@ func seedAuthorizationAdminUser(t *testing.T, storage connection.StorageManager)
 		insert into app_user (
 			tenant_codigo,
 			username,
-			email,
 			full_name,
 			password_hash,
-			email_verified,
 			must_change_password,
 			last_login_at,
 			disabled,
@@ -120,10 +114,8 @@ func seedAuthorizationAdminUser(t *testing.T, storage connection.StorageManager)
 		values (
 			'tenant_default',
 			'admin_user',
-			'admin_user@local',
 			'Admin User',
 			null,
-			true,
 			false,
 			null,
 			false,

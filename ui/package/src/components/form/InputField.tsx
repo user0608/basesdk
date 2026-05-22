@@ -23,6 +23,8 @@ type TextFieldProps<TFormValues extends FieldValues> = BaseInputFieldProps<TForm
   onChange?: (value: string) => void;
   icon?: IconType;
   small?: boolean;
+  multiline?: boolean;
+  rows?: number;
   onIconClick?: () => Promise<void> | void;
 };
 

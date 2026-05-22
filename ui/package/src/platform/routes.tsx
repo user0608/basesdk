@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { Navigate } from "react-router-dom";
 import type { RouteObject } from "react-router-dom";
 import { RequirePermissions } from "./RequirePermissions";
-import type { ComponentId, ComponentRegistry, MenuTree } from "./types";
+import type { ApplicationRegistry, MenuTree, PageId } from "./types";
 
 const combinePermissions = <TPermission extends string>(...parts: Array<readonly TPermission[] | undefined>) => {
   const merged = new Set<TPermission>();
@@ -17,12 +17,12 @@ const combinePermissions = <TPermission extends string>(...parts: Array<readonly
   return [...merged] as TPermission[];
 };
 
-export const createModuleRoutes = <TRegistry extends ComponentRegistry, TPermission extends string = string>({
+export const createModuleRoutes = <TRegistry extends ApplicationRegistry, TPermission extends string = string>({
   modules,
   registry,
   unauthorizedElement,
 }: {
-  modules: MenuTree<ComponentId<TRegistry>, TPermission>;
+  modules: MenuTree<PageId<TRegistry>, TPermission>;
   registry: TRegistry;
   unauthorizedElement?: React.ReactNode;
 }): RouteObject[] => {
@@ -41,7 +41,7 @@ export const createModuleRoutes = <TRegistry extends ComponentRegistry, TPermiss
         : [];
 
       const operationRoutes = menu.children.map((operation) => {
-        const component = registry[operation.componentId];
+        const component = registry.pages[operation.componentId];
         const permissions = combinePermissions(module.permissions, menu.permissions, operation.permissions);
 
         return {

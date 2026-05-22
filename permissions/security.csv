@@ -3,6 +3,7 @@ security.groups.create,Crear grupos
 security.groups.delete,Eliminar grupos
 security.groups.disable,Deshabilitar grupos
 security.groups.enable,Habilitar grupos
+security.groups.permissions.read,Consultar permisos efectivos de grupos
 security.groups.read,Consultar grupos
 security.groups.roles.read,Consultar roles asignados a grupos
 security.groups.roles.replace,Reemplazar roles asignados a grupos
@@ -14,15 +15,23 @@ security.roles.create,Crear roles
 security.roles.delete,Eliminar roles
 security.roles.disable,Deshabilitar roles
 security.roles.enable,Habilitar roles
+security.roles.groups.read,Consultar grupos asignados a roles
+security.roles.groups.replace,Reemplazar grupos asignados a roles
 security.roles.permissions.read,Consultar permisos asignados a roles
 security.roles.permissions.replace,Reemplazar permisos asignados a roles
 security.roles.read,Consultar roles
+security.roles.users.read,Consultar usuarios asignados a roles
+security.roles.users.replace,Reemplazar usuarios asignados a roles
 security.roles.update,Actualizar roles
 security.users.create,Crear usuarios
 security.users.delete,Eliminar usuarios
 security.users.disable,Deshabilitar usuarios
 security.users.enable,Habilitar usuarios
+security.users.groups.read,Consultar grupos asignados a usuarios
+security.users.groups.replace,Reemplazar grupos asignados a usuarios
 security.users.password.update,Actualizar contraseñas de usuarios
 security.users.permissions.read,Consultar permisos de usuarios
 security.users.read,Consultar usuarios
+security.users.roles.read,Consultar roles asignados a usuarios
+security.users.roles.replace,Reemplazar roles asignados a usuarios
 security.users.update,Actualizar usuarios

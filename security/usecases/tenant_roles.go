@@ -88,3 +88,35 @@ func (u *TenantRolesUsecase) FindPermissions(ctx context.Context, tenantCodigo s
 func (u *TenantRolesUsecase) ReplacePermissions(ctx context.Context, tenantCodigo string, code string, permissionCodes []string, createdBy string) error {
 	return u.repository.ReplaceRolePermissions(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code), permissionCodes, createdBy)
 }
+
+func (u *TenantRolesUsecase) FindUsers(ctx context.Context, tenantCodigo string, code string) ([]dtos.TenantUserResponse, error) {
+	users, err := u.repository.FindRoleUsers(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code))
+	if err != nil {
+		return nil, err
+	}
+	response := make([]dtos.TenantUserResponse, 0, len(users))
+	for _, user := range users {
+		response = append(response, toTenantUserResponse(user))
+	}
+	return response, nil
+}
+
+func (u *TenantRolesUsecase) ReplaceUsers(ctx context.Context, tenantCodigo string, code string, usernames []string, createdBy string) error {
+	return u.repository.ReplaceRoleUsers(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code), usernames, createdBy)
+}
+
+func (u *TenantRolesUsecase) FindGroups(ctx context.Context, tenantCodigo string, code string) ([]dtos.GroupResponse, error) {
+	groups, err := u.repository.FindRoleGroups(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code))
+	if err != nil {
+		return nil, err
+	}
+	response := make([]dtos.GroupResponse, 0, len(groups))
+	for _, group := range groups {
+		response = append(response, toGroupResponse(group))
+	}
+	return response, nil
+}
+
+func (u *TenantRolesUsecase) ReplaceGroups(ctx context.Context, tenantCodigo string, code string, groupCodes []string, createdBy string) error {
+	return u.repository.ReplaceRoleGroups(ctx, strings.TrimSpace(tenantCodigo), strings.TrimSpace(code), groupCodes, createdBy)
+}

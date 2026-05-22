@@ -1,9 +1,11 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 import { FiLoader } from "react-icons/fi";
+import { useHasAllPermissions } from "../../platform/permissions";
 
 export type ButtonProps = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>> & {
   variant?: "primary" | "secondary" | "danger";
   loading?: boolean;
+  permissions?: readonly string[];
 };
 
 const baseClassName =
@@ -17,7 +19,10 @@ const variantClassName: Record<NonNullable<ButtonProps["variant"]>, string> = {
 };
 
 export function Button({ children, className = "", variant = "primary", ...props }: ButtonProps) {
-  const { loading = false, disabled, ...restProps } = props;
+  const { loading = false, disabled, permissions, ...restProps } = props;
+  const canRender = useHasAllPermissions(permissions);
+
+  if (!canRender) return null;
 
   return (
     <button

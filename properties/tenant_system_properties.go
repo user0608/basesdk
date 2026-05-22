@@ -16,8 +16,8 @@ const tenantNotFoundFormat = "tenant system property '%s' not found for tenant '
 type TenantSystemProperty struct {
 	Key          string  `json:"key" gorm:"primaryKey"`
 	Value        string  `json:"value"`
-	TenantCodigo string  `json:"tenant_codigo" gorm:"primaryKey"`
-	DataType     string  `json:"data_type"`
+	TenantCodigo string  `json:"tenantCodigo" gorm:"primaryKey"`
+	DataType     string  `json:"dataType"`
 	Description  *string `json:"description"`
 }
 
