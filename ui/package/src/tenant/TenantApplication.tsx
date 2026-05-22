@@ -106,10 +106,10 @@ const TenantLauncher = <TRegistry extends ApplicationRegistry, TPermission exten
   };
 
   return (
-    <main className="min-h-screen bg-ui-bg px-4 py-5 text-ui-text sm:px-6 lg:px-8 lg:py-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(193,122,43,0.16),transparent_32%),linear-gradient(135deg,#f7f2e8_0%,#e9edf1_58%,#dfe9e8_100%)] px-4 py-5 text-ui-text sm:px-6 lg:px-8 lg:py-8">
       <div className="grid gap-6 lg:gap-8">
-        <header className="flex items-center justify-between gap-6 border-b border-ui-border/25 pb-4">
-          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-ui-text sm:text-3xl">{title}</h1>
+        <header className="flex items-center justify-between gap-6 border-b border-ui-primary/15 pb-4">
+          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-ui-primary sm:text-3xl">{title}</h1>
           <button
             type="button"
             aria-label="Cerrar sesion"
@@ -134,11 +134,11 @@ const TenantLauncher = <TRegistry extends ApplicationRegistry, TPermission exten
               <Link
                 key={module.id}
                 to={module.path}
-                className="group rounded-2xl bg-ui-panel p-4 shadow-sm ring-1 ring-inset ring-ui-border/30 transition-transform hover:-translate-y-0.5 hover:shadow-md"
+                className="group rounded-2xl bg-ui-panel/95 p-4 shadow-sm shadow-ui-primary/5 ring-1 ring-inset ring-ui-border/45 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-ui-primary/10"
               >
                 <div className="flex items-center gap-3">
                   {module.icon && (
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-ui-surface-selected text-ui-accent">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-ui-primary text-ui-text-inverse shadow-sm shadow-ui-primary/20">
                       {renderIcon(module.icon, "size-5 object-contain")}
                     </span>
                   )}
@@ -187,7 +187,7 @@ const SystemLauncher = ({ title }: { title: string }) => {
       to: "/system/users",
       icon: FiUserCheck,
       label: "Usuarios system",
-      description: "Administra las cuentas con acceso al panel global y sus contrasenas.",
+      description: "Administra las cuentas con acceso al panel administrativo global.",
       action: "Abrir usuarios",
     },
     {
@@ -220,10 +220,10 @@ const SystemLauncher = ({ title }: { title: string }) => {
   };
 
   return (
-    <main className="min-h-screen bg-ui-bg px-4 py-5 text-ui-text sm:px-6 lg:px-8 lg:py-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(193,122,43,0.16),transparent_32%),linear-gradient(135deg,#f7f2e8_0%,#e9edf1_58%,#dfe9e8_100%)] px-4 py-5 text-ui-text sm:px-6 lg:px-8 lg:py-8">
       <div className="grid gap-6 lg:gap-8">
-        <header className="flex items-center justify-between gap-6 border-b border-ui-border/25 pb-4">
-          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-ui-text sm:text-3xl">{title}</h1>
+        <header className="flex items-center justify-between gap-6 border-b border-ui-primary/15 pb-4">
+          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-ui-primary sm:text-3xl">{title}</h1>
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
@@ -237,13 +237,16 @@ const SystemLauncher = ({ title }: { title: string }) => {
           </div>
         </header>
 
-        <section className="overflow-hidden rounded-3xl bg-ui-panel shadow-sm ring-1 ring-inset ring-ui-border/30">
-          <div className="border-b border-ui-border/25 bg-ui-surface-muted px-5 py-5 sm:px-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-accent">System Admin</div>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ui-text">Centro de administracion</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-ui-text-muted">
-              Sesion activa para <span className="font-medium text-ui-text">{systemSession?.username ?? "usuario system"}</span>. Gestiona configuracion global y opera tenants sin entrar como usuario tenant.
-            </p>
+        <section className="overflow-hidden rounded-3xl bg-ui-panel/95 shadow-xl shadow-ui-primary/10 ring-1 ring-inset ring-ui-border/45">
+          <div className="relative overflow-hidden border-b border-ui-primary/15 bg-ui-primary px-5 py-6 text-ui-text-inverse sm:px-6">
+            <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(193,122,43,0.36),transparent_56%)]" />
+            <div className="relative">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-accent">System Admin</div>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ui-text-inverse">Centro de administracion</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-ui-text-inverse/75">
+                Sesion activa para <span className="font-medium text-ui-text-inverse">{systemSession?.username ?? "usuario system"}</span>. Gestiona configuracion global y opera tenants sin entrar como usuario tenant.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-4 p-4 sm:p-5 md:grid-cols-2">
@@ -254,10 +257,10 @@ const SystemLauncher = ({ title }: { title: string }) => {
                 <Link
                   key={card.to}
                   to={card.to}
-                  className="group rounded-2xl bg-ui-surface p-4 shadow-sm ring-1 ring-inset ring-ui-border/35 transition-all hover:-translate-y-0.5 hover:bg-ui-surface-hover hover:shadow-md"
+                  className="group rounded-2xl bg-ui-surface p-4 shadow-sm shadow-ui-primary/5 ring-1 ring-inset ring-ui-border/45 transition-all hover:-translate-y-0.5 hover:bg-ui-surface-hover hover:shadow-lg hover:shadow-ui-primary/10"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-ui-surface-selected text-ui-accent ring-1 ring-inset ring-ui-accent/10">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-ui-primary text-ui-text-inverse shadow-sm shadow-ui-primary/20 ring-1 ring-inset ring-ui-text-inverse/10">
                       <Icon className="size-5" />
                     </span>
                     <div className="min-w-0">

@@ -34,7 +34,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
   return (
     <main className="h-screen overflow-hidden bg-ui-bg text-ui-text">
       <div className="flex h-full min-h-0 flex-col">
-        <header className="shrink-0 border-b border-ui-border/35 bg-ui-panel shadow-sm">
+        <header className="shrink-0 border-b border-ui-border/45 bg-ui-panel/95 shadow-[0_10px_30px_rgba(17,78,90,0.08)] backdrop-blur">
           <div className="flex min-h-16 items-center justify-between gap-3 px-3 lg:px-6">
             <div className="flex min-w-0 items-center gap-3">
               {activeModule && (
@@ -52,7 +52,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
                   {title && (
                     <Link
                       to={homePath}
-                      className="truncate text-xl font-semibold tracking-tight text-ui-text transition-colors hover:text-ui-primary"
+                      className="truncate text-xl font-semibold tracking-tight text-ui-primary transition-colors hover:text-ui-primary-hover"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       {title}
@@ -69,7 +69,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
         </header>
 
         {isMobileMenuOpen && activeModule && (
-          <div className="fixed inset-x-0 top-16 z-40 border-b border-ui-border/30 bg-ui-panel/95 p-2 shadow-lg backdrop-blur lg:hidden">
+          <div className="fixed inset-x-0 top-16 z-40 border-b border-ui-border/40 bg-ui-panel/95 p-2 shadow-xl shadow-ui-primary/10 backdrop-blur lg:hidden">
             <div className="grid gap-2">
               {!collapseMenuColumn && (
                 <nav className="flex gap-1 overflow-x-auto">
@@ -84,7 +84,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
                         className={[
                           "group flex min-h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1.5 text-center transition-colors",
                           isActive
-                            ? "bg-ui-surface-selected text-ui-text shadow-sm ring-1 ring-inset ring-ui-accent/15"
+                            ? "bg-ui-primary text-ui-text-inverse shadow-sm ring-1 ring-inset ring-ui-primary/20"
                             : "text-ui-text-muted hover:bg-ui-surface-hover hover:text-ui-text",
                         ].join(" ")}
                         onClick={() => setIsMobileMenuOpen(false)}
@@ -115,7 +115,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
                         className={[
                           "flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
                           isActive
-                            ? "bg-ui-primary/10 text-ui-primary ring-1 ring-inset ring-ui-primary/15"
+                            ? "bg-ui-primary text-ui-text-inverse shadow-sm ring-1 ring-inset ring-ui-primary/20"
                             : "text-ui-text-muted hover:bg-ui-surface-hover hover:text-ui-text",
                         ].join(" ")}
                         onClick={() => setIsMobileMenuOpen(false)}
@@ -133,7 +133,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
 
         <div className={`grid min-h-0 flex-1 ${collapseMenuColumn ? "lg:grid-cols-[190px_minmax(0,1fr)]" : "lg:grid-cols-[76px_190px_minmax(0,1fr)]"}`}>
           {!collapseMenuColumn && (
-            <aside className="hidden overflow-y-auto border-r border-ui-border/30 bg-ui-panel px-2 py-2 lg:block">
+            <aside className="hidden overflow-y-auto border-r border-ui-primary/15 bg-ui-primary px-2 py-2 text-ui-text-inverse lg:block">
               {activeModule ? (
               <nav className="grid gap-1">
                 {activeModule.children.map((menu) => {
@@ -147,14 +147,14 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
                       className={[
                         "group flex min-h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1.5 text-center transition-colors lg:min-h-14 lg:min-w-0 lg:py-2",
                         isActive
-                          ? "bg-ui-surface-selected text-ui-text shadow-sm ring-1 ring-inset ring-ui-accent/15"
-                          : "text-ui-text-muted hover:bg-ui-surface-hover hover:text-ui-text",
+                          ? "bg-ui-text-inverse/15 text-ui-text-inverse shadow-sm ring-1 ring-inset ring-ui-text-inverse/20"
+                          : "text-ui-text-inverse/70 hover:bg-ui-text-inverse/10 hover:text-ui-text-inverse",
                       ].join(" ")}
                     >
                       {menu.icon ? (
                         <span className="grid size-6 place-items-center">{renderIcon(menu.icon, "size-5 object-contain")}</span>
                       ) : (
-                        <span className="grid size-6 place-items-center rounded-lg bg-ui-surface-hover text-[10px] font-bold tracking-tight text-ui-text-soft group-hover:text-ui-text">
+                          <span className="grid size-6 place-items-center rounded-lg bg-ui-text-inverse/10 text-[10px] font-bold tracking-tight text-ui-text-inverse/70 group-hover:text-ui-text-inverse">
                           {fallbackIcon}
                         </span>
                       )}
@@ -167,7 +167,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
             </aside>
           )}
 
-          <aside className="hidden overflow-y-auto border-r border-ui-border/30 bg-ui-panel px-2.5 py-2 lg:block">
+          <aside className="hidden overflow-y-auto border-r border-ui-border/40 bg-ui-panel/90 px-2.5 py-2 shadow-[8px_0_28px_rgba(17,78,90,0.04)] lg:block">
             {activeMenu ? (
               <nav className="grid gap-1">
                 {activeMenu.children.map((operation) => {
@@ -180,7 +180,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
                       className={[
                         "flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors lg:shrink lg:py-2",
                         isActive
-                          ? "bg-ui-primary/10 text-ui-primary ring-1 ring-inset ring-ui-primary/15"
+                          ? "bg-ui-primary text-ui-text-inverse shadow-sm ring-1 ring-inset ring-ui-primary/20"
                           : "text-ui-text-muted hover:bg-ui-surface-hover hover:text-ui-text",
                       ].join(" ")}
                     >
@@ -193,7 +193,7 @@ export const WorkspaceLayout = <TComponentId extends string, TPermission extends
             ) : null}
           </aside>
 
-          <section className="flex min-h-0 flex-col overflow-hidden bg-ui-panel-muted">
+          <section className="flex min-h-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(193,122,43,0.13),transparent_34%),linear-gradient(135deg,#f6f7f6_0%,#e8edf1_100%)]">
             <div className="min-h-0 flex-1 overflow-hidden px-3 py-3 lg:px-4 lg:py-4">{children}</div>
           </section>
         </div>
